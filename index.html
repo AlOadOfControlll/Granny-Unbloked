@@ -4,69 +4,60 @@
     <meta charset="UTF-8">
     <title>Void Jump | Glitch Bound Studios</title>
     <style>
-        body { margin: 0; background: #050505; color: white; font-family: monospace; overflow: hidden; text-align: center; }
-        canvas { background: #000; display: block; margin: 0 auto; border-bottom: 3px solid #333; }
+        body { margin: 0; background: #000; color: white; font-family: monospace; overflow: hidden; text-align: center; }
+        canvas { display: block; }
         
-        /* THE FIX: We use a different way to layer menus so the browser can't "hide" them */
         .overlay { 
             position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(0,0,0,0.98); display: none; flex-direction: column; 
-            justify-content: center; align-items: center; z-index: 999;
+            background: rgba(0,0,0,0.95); display: none; flex-direction: column; 
+            justify-content: center; align-items: center; z-index: 1000;
         }
         
         .gb-btn { 
-            width: 280px; height: 70px; background: #111; color: #00ffcc; 
-            border: 3px solid #00ffcc; font-size: 22px; font-weight: bold; 
-            cursor: pointer; margin: 15px; border-radius: 10px; text-transform: uppercase;
-            font-family: inherit; pointer-events: auto !important;
+            width: 250px; height: 60px; background: #111; color: #00ffcc; 
+            border: 3px solid #00ffcc; font-size: 20px; font-weight: bold; 
+            cursor: pointer; margin: 10px; border-radius: 8px; text-transform: uppercase;
         }
-        .gb-btn:hover { background: #00ffcc; color: #000; }
+        .gb-btn:hover { background: #00ffcc; color: #000; box-shadow: 0 0 20px #00ffcc; }
 
-        input { background: #222; border: 2px solid #ff00ff; color: #00ffcc; padding: 15px; font-size: 22px; text-align: center; width: 260px; outline: none; margin-bottom: 10px; }
+        input { background: #111; border: 2px solid #ff00ff; color: #00ffcc; padding: 15px; font-size: 20px; text-align: center; margin-bottom: 10px; outline: none; }
         
-        .shop-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin: 15px; max-height: 300px; overflow-y: auto; padding: 10px; border: 1px solid #ffd700; width: 450px; }
-        .skin-card { border: 1px solid #444; padding: 10px; cursor: pointer; background: #111; font-size: 10px; }
-        
-        #ui { position: absolute; top: 10px; left: 10px; text-align: left; font-size: 16px; color: #00ffcc; pointer-events: none; z-index: 10; }
-        #watermark { position: absolute; bottom: 15px; right: 20px; font-size: 14px; color: #ff00ff; font-weight: bold; pointer-events: none; }
+        #ui { position: absolute; top: 15px; left: 15px; text-align: left; font-size: 18px; color: #00ffcc; pointer-events: none; z-index: 500; font-weight: bold; }
+        #pauseBtn { position: absolute; top: 15px; right: 15px; font-size: 30px; color: #00ffcc; cursor: pointer; z-index: 2000; display: none; }
+        #watermark { position: absolute; bottom: 15px; right: 20px; font-size: 14px; color: #ff00ff; font-weight: bold; pointer-events: none; z-index: 2000; }
     </style>
 </head>
 <body>
     <div id="watermark">GLITCHBOUNDSTUDIOS</div>
     <div id="ui">ID: <span id="ui-id">?</span> | BEST: <span id="ui-best">0</span><br>COINS: <span id="ui-coins" style="color:#ffd700">0</span></div>
+    <div id="pauseBtn" onmousedown="togglePause()">II</div>
 
-    <!-- STARTING MENU -->
+    <!-- MENUS -->
     <div id="menu" class="overlay" style="display:flex">
-        <div style="color:#ff00ff; letter-spacing:4px; margin-bottom:10px;">GLITCH BOUND STUDIOS</div>
-        <h1>VOID JUMP</h1>
+        <h1 style="color:#00ffcc; font-size:55px; margin:10px; text-shadow: 0 0 15px #00ffcc;">VOID JUMP</h1>
         <input type="text" id="nameIn" placeholder="HANDLE" maxlength="10">
-        <!-- THE "IN-LINE" BUTTON FIX -->
         <button class="gb-btn" style="background:#00ffcc; color:#000;" onmousedown="start()">START RUN</button>
         <button class="gb-btn" style="color:#ffd700; border-color:#ffd700;" onmousedown="openMenu('shopMenu')">SHOP</button>
-        <button class="gb-btn" style="color:#ff00ff; border-color:#ff00ff;" onmousedown="openMenu('settingsMenu')">SETTINGS</button>
     </div>
 
-    <!-- DEATH MENU -->
+    <div id="pauseMenu" class="overlay">
+        <h1 style="color:#00ffcc">PAUSED</h1>
+        <p id="pauseName" style="color:#ff00ff; font-size: 20px;"></p>
+        <button class="gb-btn" onmousedown="togglePause()">RESUME</button>
+        <button class="gb-btn" onmousedown="location.reload()">QUIT TO MENU</button>
+    </div>
+
     <div id="deathMenu" class="overlay">
         <h1 style="color:red">VOID CRASHED</h1>
-        <p id="deathScore" style="font-size: 24px;"></p>
+        <p id="deathScore" style="font-size: 24px; color: white;"></p>
         <button class="gb-btn" onmousedown="start()">RETRY</button>
         <button class="gb-btn" onmousedown="openMenu('menu')">MENU</button>
     </div>
 
-    <!-- SHOP -->
     <div id="shopMenu" class="overlay">
         <h1 style="color:#ffd700">THE VAULT</h1>
-        <div id="vCoins" style="color:#ffd700; font-size:20px;">Coins: 0</div>
-        <div class="shop-grid" id="skinList"></div>
-        <button class="gb-btn" onmousedown="openMenu('menu')">BACK</button>
-    </div>
-
-    <!-- SETTINGS -->
-    <div id="settingsMenu" class="overlay">
-        <h1>SETTINGS</h1>
-        <div style="margin:10px">LEFT KEY: <button class="gb-btn" style="width:100px; height:50px;" onmousedown="remap('left')" id="btnL">A</button></div>
-        <div style="margin:10px">RIGHT KEY: <button class="gb-btn" style="width:100px; height:50px;" onmousedown="remap('right')" id="btnR">D</button></div>
+        <div id="vCoins" style="color:#ffd700; font-size:20px; margin-bottom:10px;">Coins: 0</div>
+        <div id="skinList" style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin-bottom:20px;"></div>
         <button class="gb-btn" onmousedown="openMenu('menu')">BACK</button>
     </div>
 
@@ -75,46 +66,52 @@
     <script>
         const canvas = document.getElementById('game');
         const ctx = canvas.getContext('2d');
-        canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+        
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.onresize = resize; resize();
 
-        let active = false, score = 0, frame = 0, shake = 0;
+        let active = false, paused = false, score = 0, frame = 0;
         let coins = parseInt(localStorage.getItem('gb_c')) || 0;
         let high = parseInt(localStorage.getItem('gb_h')) || 0;
-        let owned = JSON.parse(localStorage.getItem('gb_s')) || [0];
+        let owned = JSON.parse(localStorage.getItem('gb_s')) ||;
         let sel = parseInt(localStorage.getItem('gb_sel')) || 0;
-        let keys = { left: 'KeyA', right: 'KeyD' };
-        let activeKeys = {};
+        let keys = {};
+        let handle = "PLAYER";
 
         let skins = [];
         const colors = ['#00ffcc','#ff00ff','#ffd700','#ff4400','#22ff22','#ffffff','#9900ff','#0099ff','#ff1493','#7fff00'];
-        for(let i=0; i<50; i++) skins.push({id: i, color: colors[i%10], price: i*40});
+        for(let i=0; i<50; i++) skins.push({id: i, color: colors[i%10], price: i*50});
 
-        window.onkeydown = e => {
-            if(remapTarget) {
-                keys[remapTarget] = e.code;
-                document.getElementById('btn' + remapTarget.charAt(0).toUpperCase()).innerText = e.key.toUpperCase();
-                remapTarget = null; return;
-            }
-            activeKeys[e.code] = true;
+        window.onkeydown = e => { 
+            keys[e.code] = true;
+            if(e.code === 'KeyP') togglePause();
         };
-        window.onkeyup = e => activeKeys[e.code] = false;
-
-        let remapTarget = null;
-        function remap(t) { remapTarget = target; document.getElementById('btn'+t.charAt(0).toUpperCase()).innerText = '...'; }
+        window.onkeyup = e => keys[e.code] = false;
 
         function openMenu(id) {
             document.querySelectorAll('.overlay').forEach(o => o.style.display = 'none');
-            document.getElementById(id).style.display = 'flex';
+            if(id !== 'none') document.getElementById(id).style.display = 'flex';
+            document.getElementById('pauseBtn').style.display = (id === 'none') ? 'block' : 'none';
             if(id === 'shopMenu') renderShop();
+        }
+
+        function togglePause() {
+            if(!active) return;
+            paused = !paused;
+            document.getElementById('pauseMenu').style.display = paused ? 'flex' : 'none';
+            document.getElementById('pauseName').innerText = "RUNNING AS: " + handle;
         }
 
         function renderShop() {
             const list = document.getElementById('skinList'); list.innerHTML = '';
             skins.forEach(s => {
                 const isOwned = owned.includes(s.id);
-                list.innerHTML += `<div class="skin-card" onmousedown="buy(${s.id})" style="border-color:${sel==s.id?'#ffd700':'#444'}">
-                    <div style="width:20px;height:20px;background:${s.color};margin:auto;"></div>
-                    ${isOwned ? 'OWNED' : s.price+'C'}</div>`;
+                list.innerHTML += `<div onclick="buy(${s.id})" style="border:1px solid ${sel==s.id?'#ffd700':'#444'}; padding:5px; background:#111; cursor:pointer; width:60px;">
+                    <div style="width:20px;height:20px;background:${s.color};margin:auto;border-radius:${s.id > 25 ? '50%' : '0'}"></div>
+                    ${isOwned ? 'OWN' : s.price+'C'}</div>`;
             });
             document.getElementById('vCoins').innerText = "Coins: " + coins;
         }
@@ -122,52 +119,68 @@
         function buy(id) {
             if(owned.includes(id)) { sel = id; }
             else if(coins >= skins[id].price) { coins -= skins[id].price; owned.push(id); sel = id; }
-            save(); renderShop(); updateUI();
+            localStorage.setItem('gb_c', coins); localStorage.setItem('gb_s', JSON.stringify(owned)); localStorage.setItem('gb_sel', sel);
+            renderShop(); updateUI();
         }
 
-        function save() { localStorage.setItem('gb_c', coins); localStorage.setItem('gb_h', high); localStorage.setItem('gb_s', JSON.stringify(owned)); localStorage.setItem('gb_sel', sel); }
-        function updateUI() { document.getElementById('ui-coins').innerText = coins; document.getElementById('ui-best').innerText = high; }
+        function updateUI() { 
+            document.getElementById('ui-id').innerText = handle.toUpperCase();
+            document.getElementById('ui-coins').innerText = coins; 
+            document.getElementById('ui-best').innerText = high; 
+        }
 
-        let player = { x: canvas.width/2, y: canvas.height - 120 };
+        let player = { x: canvas.width/2, y: canvas.height - 150 };
         let obstacles = [];
 
         function start() {
-            const n = document.getElementById('nameIn').value || "PLAYER";
-            if(n.toLowerCase() === "glitchboundstudio") { coins = 999999; owned = skins.map(s=>s.id); }
-            document.getElementById('ui-id').innerText = n.toUpperCase();
-            openMenu('none'); // Hides all
-            active = true; score = 0; frame = 0; obstacles = []; updateUI(); loop();
+            handle = document.getElementById('nameIn').value || "PLAYER";
+            if(handle === "GlitchBoundStudio") { coins = 999999; owned = skins.map(s=>s.id); }
+            openMenu('none');
+            active = true; paused = false; score = 0; frame = 0; obstacles = []; 
+            updateUI(); loop();
         }
 
         function loop() {
             if(!active) return;
-            if(shake > 0) { ctx.save(); ctx.translate(Math.random()*10-5, Math.random()*10-5); shake--; }
-            ctx.fillStyle = "rgba(0,0,0,0.3)"; ctx.fillRect(0,0,canvas.width,canvas.height);
+            if(!paused) {
+                // TRAIL EFFECT: We don't fully clear the screen, we draw a semi-transparent black over it
+                ctx.fillStyle = "rgba(0, 0, 0, 0.2)";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            if(activeKeys[keys.left]) player.x -= 8;
-            if(activeKeys[keys.right]) player.x += 8;
-            player.x = Math.max(20, Math.min(canvas.width-20, player.x));
+                if(keys['KeyA'] || keys['ArrowLeft']) player.x -= 10;
+                if(keys['KeyD'] || keys['ArrowRight']) player.x += 10;
+                player.x = Math.max(20, Math.min(canvas.width-20, player.x));
 
-            if(frame % 20 === 0) obstacles.push({x: Math.random()*canvas.width, y: -50, s: 7+(score/12)});
+                if(frame % 20 === 0) obstacles.push({x: Math.random()*canvas.width, y: -50, s: 7+(score/12)});
 
-            obstacles.forEach((o, i) => {
-                o.y += o.s; ctx.fillStyle = "white"; ctx.fillRect(o.x-15, o.y, 30, 30);
-                if(o.y > player.y-15 && Math.abs(o.x - player.x) < 25) {
-                    active = false; shake = 30; if(score > high) high = score; save();
-                    document.getElementById('deathScore').innerText = "SCORE: " + score;
-                    openMenu('deathMenu');
-                }
-                if(o.y > canvas.height) { obstacles.splice(i, 1); score++; if(score % 5 === 0) { coins++; updateUI(); } }
-            });
+                obstacles.forEach((o, i) => {
+                    o.y += o.s;
+                    // SHADOW/GLOW
+                    ctx.shadowBlur = 10; ctx.shadowColor = "white";
+                    ctx.fillStyle = "white";
+                    ctx.fillRect(o.x-15, o.y, 30, 30);
+                    
+                    if(o.y > player.y-15 && Math.abs(o.x - player.x) < 25) {
+                        active = false; if(score > high) { high = score; localStorage.setItem('gb_h', high); }
+                        document.getElementById('deathScore').innerText = "SCORE: " + score;
+                        openMenu('deathMenu');
+                    }
+                    if(o.y > canvas.height) { obstacles.splice(i, 1); score++; if(score%5==0){coins+=2; updateUI();} }
+                });
 
-            ctx.fillStyle = skins[sel].color;
-            ctx.fillRect(player.x-15, player.y, 30, 30);
-            if(shake > 0) ctx.restore();
-            frame++; requestAnimationFrame(loop);
+                // PLAYER GLOW
+                ctx.shadowBlur = 15; ctx.shadowColor = skins[sel].color;
+                ctx.fillStyle = skins[sel].color;
+                if(skins[sel].id > 25) { ctx.beginPath(); ctx.arc(player.x, player.y, 15, 0, Math.PI*2); ctx.fill(); }
+                else { ctx.fillRect(player.x-15, player.y, 30, 30); }
+                
+                ctx.shadowBlur = 0; // Reset blur
+                frame++;
+            }
+            requestAnimationFrame(loop);
         }
         updateUI();
     </script>
 </body>
 </html>
-
 
