@@ -2,55 +2,74 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Void Jump v7.0 | Glitch Bound Studios</title>
+    <title>Void Jump | Glitch Bound Studios</title>
     <style>
-        body { margin: 0; background: #000; color: white; font-family: 'Courier New', monospace; overflow: hidden; text-align: center; }
-        canvas { background: #050505; display: block; margin: 0 auto; border-bottom: 3px solid #333; }
-        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.98); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 100; }
-        #menu, #shopMenu, #auth, #pause { display: none; }
-        h1 { font-size: 55px; color: #00ffcc; text-shadow: 0 0 20px #00ffcc; margin: 5px; }
-        .glitch-text { color: #ff00ff; font-size: 12px; letter-spacing: 5px; margin-bottom: 15px; }
-        input { background: #111; border: 2px solid #ff00ff; color: #00ffcc; padding: 15px; font-size: 18px; text-align: center; margin: 10px; outline: none; width: 250px; }
-        button { background: transparent; color: #00ffcc; border: 2px solid #00ffcc; padding: 10px 25px; font-size: 16px; cursor: pointer; margin: 5px; border-radius: 4px; }
+        body { margin: 0; background: #050505; color: white; font-family: 'Courier New', monospace; overflow: hidden; text-align: center; }
+        canvas { background: #000; display: block; margin: 0 auto; border-bottom: 3px solid #333; }
+        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.96); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 100; }
+        #settingsMenu, #shopMenu, #menu, #nameMenu { display: none; }
+        h1 { font-size: 55px; color: #00ffcc; text-shadow: 0 0 15px #00ffcc; margin: 10px; }
+        .studio-name { color: #ff00ff; font-size: 14px; letter-spacing: 3px; margin-bottom: 20px; }
+        input { background: #111; border: 2px solid #ff00ff; color: white; padding: 12px; font-size: 18px; text-align: center; margin: 10px; outline: none; }
+        button { background: transparent; color: #00ffcc; border: 2px solid #00ffcc; padding: 10px 25px; font-size: 16px; cursor: pointer; margin: 5px; border-radius: 4px; transition: 0.2s; }
         button:hover { background: #00ffcc; color: black; }
-        .shop-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin: 10px; max-height: 300px; overflow-y: auto; padding: 10px; border: 1px solid #222; }
-        .skin-card { border: 1px solid #444; padding: 5px; cursor: pointer; background: #111; width: 80px; font-size: 9px; }
-        .selected { border-color: #ff00ff; box-shadow: 0 0 10px #ff00ff; }
-        #ui { position: absolute; top: 15px; left: 15px; text-align: left; font-size: 14px; color: #00ffcc; pointer-events: none; z-index: 10; line-height: 1.5; }
-        .mission { background: #111; color: #ff00ff; padding: 10px; border: 1px solid #ff00ff; font-size: 12px; margin: 15px; }
+        #ui { position: absolute; top: 15px; left: 15px; text-align: left; font-size: 16px; color: #00ffcc; pointer-events: none; z-index: 10; line-height: 1.4; }
+        .shop-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin: 15px; max-height: 300px; overflow-y: auto; padding: 10px; border: 1px solid #333; width: 450px; }
+        .skin-card { border: 1px solid #444; padding: 8px; cursor: pointer; background: #111; font-size: 10px; width: 75px; }
+        .selected { border-color: #00ffcc; background: #003333; }
+        #watermark { position: absolute; bottom: 10px; left: 10px; font-size: 11px; color: rgba(255,255,255,0.2); pointer-events: none; }
     </style>
 </head>
 <body>
+    <div id="watermark">GLITCH BOUND STUDIOS | VOID JUMP v4.0</div>
     <div id="ui">
-        ID: <span id="ui-id" style="color:white">VOID</span> | LVL: <span id="ui-lvl" style="color:white">1</span><br>
-        COINS: <span id="ui-coins" style="color:#ffd700">0</span> | BEST: <span id="ui-best" style="color:white">0</span>
+        ID: <span id="ui-id">?</span> | BEST: <span id="ui-best">0</span><br>
+        COINS: <span id="ui-coins" style="color:#ffd700">0</span>
     </div>
 
-    <!-- BOOT SYSTEM (AUTH) -->
-    <div id="auth" class="overlay" style="display:flex">
-        <div class="glitch-text">GLITCH BOUND OS v7.0</div>
+    <!-- AUDIO HANDLERS -->
+    <script>
+        const sfx = {
+            music: new Audio('https://soundimage.org'),
+            coin: new Audio('https://readthedocs.io'),
+            death: new Audio('https://patrickdearteaga.com')
+        };
+        sfx.music.loop = true; sfx.music.volume = 0.4;
+    </script>
+
+    <!-- IDENTITY (LOGIN) -->
+    <div id="nameMenu" class="overlay" style="display:flex">
+        <div class="studio-name">GLITCH BOUND LOGIN</div>
         <h1>IDENTITY?</h1>
-        <input type="text" id="uIn" placeholder="HANDLE">
-        <input type="password" id="pIn" placeholder="KEYCODE">
-        <p style="font-size: 10px; color: #444;">PRESS [ENTER] TO SYNC</p>
+        <input type="text" id="userIn" placeholder="USERNAME">
+        <input type="password" id="passIn" placeholder="PASSWORD">
+        <button onclick="handleAuth()">SYNC VOID</button>
     </div>
 
-    <!-- HUB (MENU) -->
+    <!-- MAIN MENU -->
     <div id="menu" class="overlay">
-        <div class="glitch-text">ACCESS GRANTED</div>
+        <div class="studio-name">GLITCH BOUND STUDIOS</div>
         <h1>VOID JUMP</h1>
-        <div class="mission" id="missionBox">MISSION: Reach 100 points for 2x Coins</div>
-        <button onclick="bootGame()">INITIATE RUN</button>
-        <button onclick="openMenu('shopMenu')">THE VAULT (50 SKINS)</button>
+        <button onclick="startGame()">START RUN</button>
+        <button onclick="toggleMenu('shopMenu', true)">THE VAULT</button>
+        <button onclick="toggleMenu('settingsMenu', true)">SETTINGS</button>
         <button onclick="location.reload()">LOGOUT</button>
     </div>
 
-    <!-- THE VAULT (SHOP) -->
+    <!-- SETTINGS -->
+    <div id="settingsMenu" class="overlay">
+        <h1>SETTINGS</h1>
+        <div style="margin:10px">LEFT: <button id="lKey" onclick="rebinding='left'">A</button></div>
+        <div style="margin:10px">RIGHT: <button id="rKey" onclick="rebinding='right'">D</button></div>
+        <button onclick="toggleMenu('settingsMenu', false)">BACK</button>
+    </div>
+
+    <!-- SHOP -->
     <div id="shopMenu" class="overlay">
         <h1>THE VAULT</h1>
-        <div id="vCoins" style="color:#ffd700; margin-bottom: 10px;">Coins: 0</div>
+        <div id="shopCoinDisplay" style="color:#ffd700">Coins: 0</div>
         <div class="shop-grid" id="skinList"></div>
-        <button onclick="openMenu('menu')">RETURN</button>
+        <button onclick="toggleMenu('shopMenu', false)">BACK</button>
     </div>
 
     <canvas id="game"></canvas>
@@ -60,136 +79,138 @@
         const ctx = canvas.getContext('2d');
         canvas.width = window.innerWidth; canvas.height = window.innerHeight;
 
-        let user = null, active = false, score = 0, frame = 0, shake = 0, hasShield = false;
+        let currentUser = null, gameActive = false, score = 0, frame = 0, shake = 0;
+        let rebinding = null;
+        let binds = JSON.parse(localStorage.getItem('vBinds')) || { left: 'KeyA', right: 'KeyD', lLab: 'A', rLab: 'D' };
         let player = { x: canvas.width/2, y: canvas.height - 120 };
-        let obstacles = [], vCoins = [], particles = [];
+        let enemies = [], voidCoins = [], particles = [];
 
-        // --- AUDIO ---
-        const sfx = {
-            m: new Audio('https://soundimage.org'),
-            c: new Audio('https://readthedocs.io'),
-            d: new Audio('https://patrickdearteaga.com')
-        };
-        sfx.m.loop = true; sfx.m.volume = 0.3;
-
-        // --- 50 SKINS GENERATOR ---
+        // 50 Skins
         const skinColors = ['#00ffcc','#ff00ff','#ffd700','#ff4400','#22ff22','#ffffff','#9900ff','#0099ff','#ff1493','#7fff00'];
-        const abilities = ["SPD +10%", "2x COINS", "SHIELD", "DASH", "SPD +20%"];
         const skins = [];
-        for(let i=0; i<50; i++) skins.push({ id: i, color: skinColors[i % 10], price: (i * 25), ability: abilities[i % 5], shape: i > 25 ? 'cir' : 'sq' });
+        for(let i=0; i<50; i++) skins.push({ id: i, name: 'Skin '+(i+1), color: skinColors[i%10], price: (i*20), shape: i>25?'cir':'sq' });
 
-        // --- AUTH TRIGGER ---
-        window.addEventListener('keypress', (e) => {
-            if(e.key === 'Enter' && document.getElementById('auth').style.display === 'flex') {
-                const u = document.getElementById('uIn').value.trim().toLowerCase();
-                const p = document.getElementById('pIn').value.trim().toLowerCase();
-                
-                if(u === "glitchboundstudio" && p === "glitchboundstudio") {
-                    login({ name: "Admin", coins: 999999, high: 0, lvl: 99, owned: skins.map(s=>s.id), sel: 1, isAdmin: true });
-                } else if(u && p) {
-                    let db = JSON.parse(localStorage.getItem('gb_db')) || {};
-                    if(db[u]) {
-                        if(db[u].pass === p) login(db[u]); else alert("KEY DENIED");
-                    } else {
-                        let nU = { name: u, pass: p, coins: 0, high: 0, lvl: 1, owned:, sel: 0 };
-                        db[u] = nU; localStorage.setItem('gb_db', JSON.stringify(db)); login(nU);
-                    }
-                }
+        function handleAuth() {
+            const u = document.getElementById('userIn').value.trim();
+            const p = document.getElementById('passIn').value.trim();
+            if(!u || !p) return alert("Fill all fields!");
+
+            if(u === "glitchboundstudio" && p === "glitchboundstudio") {
+                login({ name: "Admin", coins: 999999, high: 9999, owned: skins.map(s=>s.id), sel: 1, isAdmin: true });
+                return;
             }
-        });
+
+            let users = JSON.parse(localStorage.getItem('vj_users')) || {};
+            if(users[u]) {
+                if(users[u].pass === p) login(users[u]);
+                else alert("Wrong password!");
+            } else {
+                let newUser = { name: u, pass: p, coins: 0, high: 0, owned:, sel: 0 };
+                users[u] = newUser;
+                localStorage.setItem('vj_users', JSON.stringify(users));
+                login(newUser);
+            }
+        }
 
         function login(data) {
-            user = data;
-            document.getElementById('auth').style.display = 'none';
+            currentUser = data;
+            document.getElementById('nameMenu').style.display = 'none';
             document.getElementById('menu').style.display = 'flex';
-            document.getElementById('ui-id').innerText = user.name.toUpperCase();
+            document.getElementById('ui-id').innerText = currentUser.name.toUpperCase();
             updateUI();
         }
 
-        function openMenu(id) {
-            document.querySelectorAll('.overlay').forEach(o => o.style.display = 'none');
-            document.getElementById(id).style.display = 'flex';
+        function toggleMenu(id, show) {
+            document.getElementById('menu').style.display = show ? 'none' : 'flex';
+            document.getElementById(id).style.display = show ? 'flex' : 'none';
             if(id === 'shopMenu') renderShop();
+            if(id === 'settingsMenu') { document.getElementById('lKey').innerText = binds.lLab; document.getElementById('rKey').innerText = binds.rLab; }
         }
 
         function renderShop() {
             const list = document.getElementById('skinList'); list.innerHTML = '';
             skins.forEach(s => {
-                const owned = user.owned.includes(s.id);
-                list.innerHTML += `<div class="skin-card ${user.sel==s.id?'selected':''}" onclick="buySkin(${s.id})">
+                const owned = currentUser.owned.includes(s.id);
+                list.innerHTML += `<div class="skin-card ${currentUser.sel==s.id?'selected':''}" onclick="buySkin(${s.id})">
                     <div style="width:20px;height:20px;background:${s.color};margin:auto;border-radius:${s.shape=='cir'?'50%':'0'}"></div>
-                    ${owned ? 'EQUIP' : s.price+'C'}<br><span style="color:#ff00ff">${s.ability}</span></div>`;
+                    ${owned ? 'EQUIP' : s.price+'C'}</div>`;
             });
-            document.getElementById('vCoins').innerText = "Coins: " + user.coins;
+            document.getElementById('shopCoinDisplay').innerText = "Coins: " + currentUser.coins;
         }
 
         function buySkin(id) {
-            if(user.owned.includes(id)) user.sel = id;
-            else if(user.coins >= skins[id].price) { user.coins -= skins[id].price; user.owned.push(id); user.sel = id; }
+            if(currentUser.owned.includes(id)) { currentUser.sel = id; }
+            else if(currentUser.coins >= skins[id].price) {
+                currentUser.coins -= skins[id].price; currentUser.owned.push(id); currentUser.sel = id;
+            }
             save(); renderShop(); updateUI();
         }
 
-        function save() { if(user.isAdmin) return; let db = JSON.parse(localStorage.getItem('gb_db')); db[user.name.toLowerCase()] = user; localStorage.setItem('gb_db', JSON.stringify(db)); }
-        function updateUI() { document.getElementById('ui-coins').innerText = user.coins; document.getElementById('ui-best').innerText = user.high; document.getElementById('ui-lvl').innerText = user.lvl; }
+        function save() { if(currentUser.isAdmin) return; let users = JSON.parse(localStorage.getItem('vj_users')); users[currentUser.name] = currentUser; localStorage.setItem('vj_users', JSON.stringify(users)); }
+        function updateUI() { document.getElementById('ui-coins').innerText = currentUser.coins; document.getElementById('ui-best').innerText = currentUser.high; }
 
-        window.addEventListener('mousemove', e => player.x = e.clientX);
+        window.addEventListener('keydown', (e) => {
+            if (rebinding) { 
+                binds[rebinding === 'left' ? 'left' : 'right'] = e.code; 
+                binds[rebinding === 'left' ? 'lLab' : 'rLab'] = e.key.toUpperCase(); 
+                localStorage.setItem('vBinds', JSON.stringify(binds)); rebinding = null; 
+                document.getElementById('lKey').innerText = binds.lLab; document.getElementById('rKey').innerText = binds.rLab; return; 
+            }
+            if (!gameActive) return;
+            if (e.code === binds.left) player.x -= 45;
+            if (e.code === binds.right) player.x += 45;
+            player.x = Math.max(20, Math.min(canvas.width - 20, player.x));
+        });
 
-        function bootGame() {
+        function startGame() {
             document.getElementById('menu').style.display = 'none';
-            active = true; score = 0; obstacles = []; vCoins = []; particles = []; frame = 0;
-            sfx.m.play(); loop();
+            score = 0; enemies = []; voidCoins = []; particles = []; gameActive = true; frame = 0;
+            sfx.music.play(); animate();
         }
 
-        function spawnParticle(x, y, color) { particles.push({ x, y, vx: Math.random()*4-2, vy: Math.random()*2, l: 1, c: color }); }
-
-        function loop() {
-            if(!active) return;
-            let ox = 0, oy = 0; if(shake > 0) { ox = Math.random()*10-5; oy = Math.random()*10-5; shake--; }
+        function animate() {
+            if (!gameActive) return;
+            let ox = 0, oy = 0; if (shake > 0) { ox = Math.random()*12-6; oy = Math.random()*12-6; shake--; }
             ctx.save(); ctx.translate(ox, oy);
             ctx.fillStyle = "rgba(0,0,0,0.3)"; ctx.fillRect(0,0,canvas.width,canvas.height);
 
-            const s = skins[user.sel];
-            if(frame % 15 === 0) obstacles.push({ x: Math.random()*canvas.width, y: -50, s: 6+(score/100) });
-            if(frame % 80 === 0) vCoins.push({ x: Math.random()*canvas.width, y: -50 });
+            if (frame % 15 === 0) enemies.push({ x: Math.random()*canvas.width, y: -50, speed: 5+(score/100) });
+            if (frame % 80 === 0) voidCoins.push({ x: Math.random()*canvas.width, y: -50, speed: 4 });
 
-            // TRAILS
-            spawnParticle(player.x, player.y + 15, s.color);
+            // Trails
+            particles.push({x: player.x, y: player.y+15, life: 1.0, color: skins[currentUser.sel].color});
             particles.forEach((p, i) => {
-                p.x += p.vx; p.y += p.vy; p.l -= 0.04; ctx.globalAlpha = p.l; ctx.fillStyle = p.c;
-                ctx.fillRect(p.x, p.y, 4, 4); if(p.l <= 0) particles.splice(i, 1);
+                p.life -= 0.05; ctx.globalAlpha = p.life; ctx.fillStyle = p.color;
+                ctx.fillRect(p.x-2, p.y, 4, 4); if(p.life <= 0) particles.splice(i, 1);
             });
             ctx.globalAlpha = 1;
 
-            vCoins.forEach((c, i) => {
-                c.y += 4; ctx.fillStyle = "#ffd700"; ctx.beginPath(); ctx.arc(c.x, c.y, 8, 0, Math.PI*2); ctx.fill();
-                if(Math.hypot(player.x-c.x, player.y-c.y) < 30) { 
-                    vCoins.splice(i, 1); user.coins += (s.ability.includes('2x') ? 4 : 2); 
-                    sfx.c.play(); updateUI(); save(); 
-                }
+            voidCoins.forEach((c, i) => {
+                c.y += c.speed; ctx.fillStyle = '#ffd700'; ctx.beginPath(); ctx.arc(c.x, c.y, 8, 0, Math.PI*2); ctx.fill();
+                if (Math.hypot(player.x - c.x, player.y - c.y) < 30) { voidCoins.splice(i, 1); currentUser.coins += 2; sfx.coin.play(); updateUI(); save(); }
             });
 
-            obstacles.forEach((o, i) => {
-                o.y += o.s; ctx.fillStyle = "white"; ctx.fillRect(o.x-15, o.y, 30, 30);
-                if(o.y > player.y-15 && Math.abs(o.x - player.x) < 25) {
-                    active = false; shake = 20; sfx.m.pause(); sfx.d.play();
-                    if(score > user.high) { user.high = score; user.lvl = Math.floor(score/50)+1; save(); }
+            enemies.forEach((en, i) => {
+                en.y += en.speed; ctx.fillStyle = "white"; ctx.fillRect(en.x, en.y, 30, 30);
+                if (en.y+30 > player.y && Math.abs(en.x - player.x) < 25) {
+                    gameActive = false; shake = 25; sfx.music.pause(); sfx.death.play();
+                    if(score > currentUser.high) { currentUser.high = score; save(); updateUI(); }
                     setTimeout(() => {
                         if(confirm("REVIVE FOR 50 COINS?")) {
-                            if(user.coins >= 50) { user.coins -= 50; active = true; loop(); sfx.m.play(); updateUI(); save(); }
-                            else { alert("NO COINS"); document.getElementById('menu').style.display = 'flex'; }
+                            if(currentUser.coins >= 50) { currentUser.coins -= 50; gameActive = true; animate(); save(); updateUI(); }
+                            else { alert("NOT ENOUGH COINS."); document.getElementById('menu').style.display = 'flex'; }
                         } else { document.getElementById('menu').style.display = 'flex'; }
                     }, 800);
                 }
-                if(o.y > canvas.height) { obstacles.splice(i, 1); score++; }
+                if (en.y > canvas.height) { enemies.splice(i, 1); score++; }
             });
 
-            ctx.fillStyle = s.color; ctx.shadowBlur = 15; ctx.shadowColor = s.color;
-            if(s.shape == 'cir') { ctx.beginPath(); ctx.arc(player.x, player.y+15, 15, 0, Math.PI*2); ctx.fill(); }
+            ctx.fillStyle = skins[currentUser.sel].color;
+            if(skins[currentUser.sel].shape === 'cir') { ctx.beginPath(); ctx.arc(player.x, player.y + 15, 15, 0, Math.PI*2); ctx.fill(); }
             else { ctx.fillRect(player.x-15, player.y, 30, 30); }
-            ctx.restore(); frame++; requestAnimationFrame(loop);
+            ctx.restore(); frame++; requestAnimationFrame(animate);
         }
+        window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
     </script>
 </body>
 </html>
-
-
