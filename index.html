@@ -6,8 +6,7 @@
     <style>
         body { margin: 0; background: #050505; color: white; font-family: 'Courier New', monospace; overflow: hidden; text-align: center; }
         canvas { background: #000; display: block; margin: 0 auto; border-bottom: 3px solid #333; }
-        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.96); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 100; }
-        #menu, #nameMenu, #shopMenu, #leaderboard, #gameOver { display: none; }
+        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.96); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 100; }
         h1 { font-size: 60px; color: #00ffcc; text-shadow: 0 0 15px #00ffcc; margin: 10px; }
         .studio-name { color: #ff00ff; font-size: 14px; letter-spacing: 3px; margin-bottom: 20px; }
         input { background: #111; border: 2px solid #ff00ff; color: white; padding: 12px; font-size: 18px; text-align: center; margin: 10px; outline: none; }
@@ -21,22 +20,12 @@
 </head>
 <body>
     <div id="ui">
-        ID: <span id="ui-id">?</span> | LVL: <span id="ui-lvl">1</span><br>
+        ID: <span id="ui-id">?</span><br>
         COINS: <span id="ui-coins" style="color:#ffd700">0</span><br>
         BEST: <span id="ui-best">0</span>
     </div>
 
-    <!-- AUDIO HANDLERS -->
-    <script>
-        const sfx = {
-            music: new Audio('https://soundimage.org'),
-            coin: new Audio('https://readthedocs.io'),
-            death: new Audio('https://patrickdearteaga.com')
-        };
-        sfx.music.loop = true; sfx.music.volume = 0.4;
-    </script>
-
-    <!-- IDENTITY MENU -->
+    <!-- STARTING OVERLAY (IDENTITY) -->
     <div id="nameMenu" class="overlay" style="display:flex">
         <div class="studio-name">GLITCH BOUND LOGIN</div>
         <h1>IDENTITY?</h1>
@@ -50,8 +39,8 @@
         <div class="studio-name">GLITCH BOUND STUDIOS</div>
         <h1>VOID JUMP</h1>
         <button onclick="startGame()">START RUN</button>
-        <button onclick="toggleMenu('shopMenu', true)">THE VAULT</button>
-        <button onclick="toggleMenu('leaderboard', true)">GLOBAL RANKS</button>
+        <button onclick="toggleView('shopMenu')">THE VAULT</button>
+        <button onclick="toggleView('leaderboard')">GLOBAL RANKS</button>
         <button onclick="location.reload()">LOGOUT</button>
     </div>
 
@@ -59,15 +48,15 @@
     <div id="leaderboard" class="overlay">
         <h1>GLOBAL RANKS</h1>
         <div id="lb-list" style="margin:20px; width:300px; text-align:left;"></div>
-        <button onclick="toggleMenu('menu', true)">BACK TO MENU</button>
+        <button onclick="toggleView('menu')">BACK TO MENU</button>
     </div>
 
     <!-- SHOP -->
     <div id="shopMenu" class="overlay">
         <h1>THE VAULT</h1>
-        <div id="shopCoinDisplay" style="color:#ffd700">Coins: 0</div>
+        <div id="shopCoinDisplay" style="color:#ffd700; margin-bottom:10px;">Coins: 0</div>
         <div class="shop-grid" id="skinList"></div>
-        <button onclick="toggleMenu('menu', true)">BACK TO MENU</button>
+        <button onclick="toggleView('menu')">BACK TO MENU</button>
     </div>
 
     <canvas id="game"></canvas>
@@ -77,11 +66,11 @@
         const ctx = canvas.getContext('2d');
         canvas.width = window.innerWidth; canvas.height = window.innerHeight;
 
-        let currentUser = null, gameActive = false, score = 0, frame = 0, shake = 0;
+        let currentUser = null, gameActive = false, score = 0, frame = 0;
         let player = { x: canvas.width/2, y: canvas.height - 100, size: 30 };
         let enemies = [], voidCoins = [];
 
-        // Generate 50 Skins
+        // 50 Skins
         const skinColors = ['#00ffcc','#ff00ff','#ffd700','#ff4400','#22ff22','#ffffff','#9900ff','#0099ff','#ff1493','#7fff00'];
         const skins = [];
         for(let i=0; i<50; i++) skins.push({ id: i, name: 'Skin ' + (i+1), color: skinColors[i % 10], price: (i * 20), shape: i > 25 ? 'cir' : 'sq' });
@@ -89,21 +78,20 @@
         function handleAuth() {
             const u = document.getElementById('userIn').value;
             const p = document.getElementById('passIn').value;
+            if(!u || !p) return alert("Fill all fields!");
 
-            // ADMIN FIX: Instant match for glitchboundstudio
-            if (u.toLowerCase() === "glitchboundstudio" && p.toLowerCase() === "glitchboundstudio") {
-                login({ name: "GlitchBoundStudio", coins: 999999, high: 9999, lvl: 99, owned: skins.map(s=>s.id), sel: 1, isAdmin: true });
+            // ADMIN
+            if (u === "glitchboundstudio" && p === "glitchboundstudio") {
+                login({ name: "GlitchBound", coins: 999999, high: 9999, owned: skins.map(s=>s.id), sel: 1, isAdmin: true });
                 return;
             }
-
-            if(!u || !p) { alert("Enter details!"); return; }
 
             let users = JSON.parse(localStorage.getItem('vj_users')) || {};
             if (users[u]) {
                 if (users[u].pass === p) login(users[u]);
-                else alert("WRONG PASSWORD.");
+                else alert("Wrong password!");
             } else {
-                let newUser = { name: u, pass: p, coins: 0, high: 0, lvl: 1, owned:, sel: 0 };
+                let newUser = { name: u, pass: p, coins: 0, high: 0, owned:, sel: 0 };
                 users[u] = newUser;
                 localStorage.setItem('vj_users', JSON.stringify(users));
                 login(newUser);
@@ -112,14 +100,14 @@
 
         function login(data) {
             currentUser = data;
-            document.getElementById('nameMenu').style.display = 'none';
-            document.getElementById('menu').style.display = 'flex';
+            toggleView('menu');
             document.getElementById('ui-id').innerText = currentUser.name.toUpperCase();
             updateUI();
         }
 
-        function toggleMenu(id, isOverlay) {
-            document.querySelectorAll('.overlay').forEach(el => el.style.display = 'none');
+        function toggleView(id) {
+            const overlays = ['nameMenu', 'menu', 'shopMenu', 'leaderboard'];
+            overlays.forEach(o => document.getElementById(o).style.display = 'none');
             document.getElementById(id).style.display = 'flex';
             if(id === 'shopMenu') renderShop();
             if(id === 'leaderboard') renderLB();
@@ -127,7 +115,7 @@
 
         function renderLB() {
             const list = document.getElementById('lb-list');
-            const data = [{n:"GlitchBoundStudio", s:9999}, {n:"Void_King", s:5000}, {n:currentUser.name, s:currentUser.high}].sort((a,b)=>b.s-a.s);
+            const data = [{n:"GlitchBound", s:9999}, {n:"Shadow", s:4500}, {n:currentUser.name, s:currentUser.high}].sort((a,b)=>b.s-a.s);
             list.innerHTML = data.map((e,i)=>`<div style="display:flex; justify-content:space-between; padding:5px; border-bottom:1px solid #333"><span>${i+1}. ${e.n}</span><span>${e.s}</span></div>`).join('');
         }
 
@@ -137,7 +125,7 @@
                 const owned = currentUser.owned.includes(s.id);
                 list.innerHTML += `<div class="skin-card ${currentUser.sel==s.id?'selected':''}" onclick="buySkin(${s.id})">
                     <div style="width:20px;height:20px;background:${s.color};margin:auto;border-radius:${s.shape=='cir'?'50%':'0'}"></div>
-                    ${s.name}<br>${owned ? 'OWNED' : s.price+'C'}</div>`;
+                    ${s.name}<br>${owned ? 'EQUIP' : s.price+'C'}</div>`;
             });
             document.getElementById('shopCoinDisplay').innerText = "Coins: " + currentUser.coins;
         }
@@ -150,49 +138,45 @@
         }
 
         function save() { if(currentUser.isAdmin) return; let users = JSON.parse(localStorage.getItem('vj_users')); users[currentUser.name] = currentUser; localStorage.setItem('vj_users', JSON.stringify(users)); }
-        function updateUI() { document.getElementById('ui-coins').innerText = currentUser.coins; document.getElementById('ui-best').innerText = currentUser.high; document.getElementById('ui-lvl').innerText = currentUser.lvl; }
+        function updateUI() { document.getElementById('ui-coins').innerText = currentUser.coins; document.getElementById('ui-best').innerText = currentUser.high; }
 
         window.addEventListener('mousemove', e => { if(gameActive) player.x = e.clientX; });
 
         function startGame() {
-            document.querySelectorAll('.overlay').forEach(e=>e.style.display='none');
+            document.getElementById('menu').style.display = 'none';
             score = 0; enemies = []; voidCoins = []; gameActive = true; frame = 0;
-            sfx.music.play(); animate();
+            animate();
         }
 
         function animate() {
             if (!gameActive) return;
-            let ox = 0, oy = 0; if (shake > 0) { ox = Math.random()*10-5; oy = Math.random()*10-5; shake--; }
-            ctx.save(); ctx.translate(ox, oy);
             ctx.fillStyle = "rgba(0,0,0,0.3)"; ctx.fillRect(0,0,canvas.width,canvas.height);
+            const s = skins[currentUser.sel];
 
             if (frame % 15 === 0) enemies.push({ x: Math.random()*canvas.width, y: -50, speed: 5 + (score/80) });
             if (frame % 80 === 0) voidCoins.push({ x: Math.random()*canvas.width, y: -50, speed: 4 });
 
             voidCoins.forEach((c, i) => {
                 c.y += c.speed; ctx.fillStyle = '#ffd700'; ctx.beginPath(); ctx.arc(c.x, c.y, 8, 0, Math.PI*2); ctx.fill();
-                if (Math.hypot(player.x - c.x, player.y - c.y) < 30) { voidCoins.splice(i, 1); currentUser.coins += 2; sfx.coin.play(); updateUI(); save(); }
+                if (Math.hypot(player.x - c.x, player.y - c.y) < 30) { voidCoins.splice(i, 1); currentUser.coins += 2; updateUI(); save(); }
             });
 
             enemies.forEach((en, i) => {
                 en.y += en.speed; ctx.fillStyle = "white"; ctx.fillRect(en.x, en.y, 30, 30);
                 if (en.y + 30 > player.y && Math.abs(en.x - player.x) < 25) {
-                    gameActive = false; sfx.music.pause(); sfx.death.play(); shake = 20;
-                    if(score > currentUser.high) { currentUser.high = score; currentUser.lvl = Math.floor(score/100)+1; save(); }
-                    setTimeout(() => toggleMenu('leaderboard', true), 1000);
+                    gameActive = false;
+                    if(score > currentUser.high) { currentUser.high = score; save(); updateUI(); }
+                    toggleView('leaderboard');
                 }
                 if (en.y > canvas.height) { enemies.splice(i, 1); score++; }
             });
 
-            const s = skins[currentUser.sel];
-            ctx.fillStyle = s.color; ctx.shadowBlur = 15; ctx.shadowColor = s.color;
+            ctx.fillStyle = s.color;
             if(s.shape === 'cir') { ctx.beginPath(); ctx.arc(player.x, player.y + 15, 15, 0, Math.PI*2); ctx.fill(); }
             else { ctx.fillRect(player.x-15, player.y, 30, 30); }
-            
             frame++; requestAnimationFrame(animate);
         }
     </script>
 </body>
 </html>
-
 
