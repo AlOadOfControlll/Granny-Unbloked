@@ -5,44 +5,37 @@
     <title>Void Jump | Glitch Bound Studios</title>
     <style>
         body { margin: 0; background: #050505; color: white; font-family: 'Courier New', monospace; overflow: hidden; text-align: center; -webkit-user-select: none; }
-        canvas { background: #000; display: block; margin: 0 auto; border-bottom: 3px solid #333; }
-        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.96); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 100; }
-        #menu, #shopMenu, #settingsMenu { display: none; }
+        canvas { background: #000; display: block; margin: 0 auto; border-bottom: 3px solid #333; position: relative; z-index: 1; }
         
-        /* ADDICTIVE START BUTTON */
-        #startBtn { 
-            background: #00ffcc; color: black; border: none; padding: 20px 60px; 
-            font-size: 24px; font-weight: bold; cursor: pointer; margin: 10px; 
-            border-radius: 8px; transition: 0.1s; text-transform: uppercase;
-            box-shadow: 0 0 20px rgba(0, 255, 204, 0.4);
-            animation: pulse 2s infinite;
+        /* Overlays - Forced to front with z-index 1000 */
+        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.96); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 1000; }
+        #menu, #shopMenu, #settingsMenu, #deathMenu { display: none; }
+        
+        /* Standardized Button Size */
+        .gb-btn { 
+            width: 250px; height: 60px; background: transparent; color: #00ffcc; 
+            border: 2px solid #00ffcc; font-size: 18px; font-weight: bold; cursor: pointer; 
+            margin: 10px; border-radius: 8px; transition: 0.1s; text-transform: uppercase;
+            display: flex; align-items: center; justify-content: center; font-family: inherit;
         }
-        #startBtn:hover { transform: scale(1.05); box-shadow: 0 0 40px #00ffcc; }
-        #startBtn:active { transform: scale(0.95); background: #fff; }
+        .gb-btn:hover { background: #00ffcc; color: black; box-shadow: 0 0 20px #00ffcc; }
+        .gb-btn:active { transform: scale(0.95); }
+        
+        #startBtn { background: #00ffcc; color: black; animation: pulse 2s infinite; }
+        .shop-btn { color: #ffd700; border-color: #ffd700; }
+        .shop-btn:hover { background: #ffd700; box-shadow: 0 0 20px #ffd700; }
 
-        @keyframes pulse {
-            0% { box-shadow: 0 0 10px #00ffcc; }
-            50% { box-shadow: 0 0 30px #00ffcc; }
-            100% { box-shadow: 0 0 10px #00ffcc; }
-        }
+        @keyframes pulse { 0% { box-shadow: 0 0 10px #00ffcc; } 50% { box-shadow: 0 0 30px #00ffcc; } 100% { box-shadow: 0 0 10px #00ffcc; } }
 
         h1 { font-size: 60px; color: #00ffcc; text-shadow: 0 0 20px #00ffcc; margin: 10px; }
         .studio-text { color: #ff00ff; letter-spacing: 3px; font-size: 14px; margin-bottom: 15px; }
-        
-        input { background: #111; border: 2px solid #ff00ff; color: #00ffcc; padding: 15px; font-size: 20px; text-align: center; margin: 10px; outline: none; width: 250px; border-radius: 5px; }
-        
-        /* YELLOW SHOP THEME */
-        .shop-btn { background: transparent; color: #ffd700; border: 2px solid #ffd700; padding: 12px 30px; font-size: 18px; cursor: pointer; margin: 10px; border-radius: 5px; transition: 0.2s; }
-        .shop-btn:hover { background: #ffd700; color: black; box-shadow: 0 0 20px #ffd700; }
+        input { background: #111; border: 2px solid #ff00ff; color: #00ffcc; padding: 15px; font-size: 20px; text-align: center; margin-bottom: 15px; width: 250px; outline: none; border-radius: 5px; }
         
         .shop-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin: 15px; max-height: 300px; overflow-y: auto; padding: 10px; width: 480px; border: 1px solid #ffd700; }
         .skin-card { border: 1px solid #444; padding: 8px; cursor: pointer; background: #111; font-size: 9px; width: 75px; }
-        .selected { border-color: #ffd700; background: #221e00; }
         
         #ui { position: absolute; top: 15px; left: 15px; text-align: left; font-size: 14px; color: #00ffcc; pointer-events: none; z-index: 10; line-height: 1.5; }
-        #watermark { position: absolute; bottom: 15px; right: 20px; font-size: 14px; color: #ff00ff; font-weight: bold; pointer-events: none; }
-        
-        /* ABILITY UI */
+        #watermark { position: absolute; bottom: 15px; right: 20px; font-size: 14px; color: #ff00ff; font-weight: bold; pointer-events: none; z-index: 2000; }
         #abilityBar { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); width: 200px; height: 10px; background: #222; border: 1px solid #00ffcc; z-index: 10; border-radius: 5px; overflow: hidden; }
         #abilityFill { width: 100%; height: 100%; background: #00ffcc; transition: 0.1s; }
     </style>
@@ -57,26 +50,34 @@
         <div class="studio-text">GLITCH BOUND STUDIOS</div>
         <h1>VOID JUMP</h1>
         <input type="text" id="nameIn" placeholder="HANDLE" maxlength="12">
-        <button id="startBtn" onclick="start()">START RUN</button>
-        <button class="shop-btn" onclick="openMenu('shopMenu')">SHOP</button>
-        <button class="shop-btn" style="color: #00ffcc; border-color: #00ffcc;" onclick="openMenu('settingsMenu')">SETTINGS</button>
+        <button id="startBtn" class="gb-btn" onclick="start()">START RUN</button>
+        <button class="gb-btn shop-btn" onclick="openMenu('shopMenu')">SHOP</button>
+        <button class="gb-btn" style="color:#ff00ff; border-color:#ff00ff;" onclick="openMenu('settingsMenu')">SETTINGS</button>
+    </div>
+
+    <!-- DEATH MENU -->
+    <div id="deathMenu" class="overlay">
+        <h1 style="color:red; text-shadow: 0 0 20px red;">VOID CRASHED</h1>
+        <p id="deathScore" style="font-size: 24px; color: white;"></p>
+        <button class="gb-btn" id="retryBtn" onclick="start()">RETRY</button>
+        <button class="gb-btn" onclick="openMenu('menu')">MAIN MENU</button>
     </div>
 
     <!-- SETTINGS -->
     <div id="settingsMenu" class="overlay">
         <h1>SETTINGS</h1>
-        <div style="margin:10px">LEFT: <button id="keyLeft" onclick="remap('left')">A</button></div>
-        <div style="margin:10px">RIGHT: <button id="keyRight" onclick="remap('right')">D</button></div>
-        <div style="margin:10px">ABILITY: <button id="keyAbility" onclick="remap('ability')">G</button></div>
-        <button class="shop-btn" onclick="openMenu('menu')">BACK</button>
+        <div style="margin:10px">LEFT: <button id="keyLeft" class="gb-btn" style="height:40px" onclick="remap('left')">A</button></div>
+        <div style="margin:10px">RIGHT: <button id="keyRight" class="gb-btn" style="height:40px" onclick="remap('right')">D</button></div>
+        <div style="margin:10px">POWER: <button id="keyAbility" class="gb-btn" style="height:40px" onclick="remap('ability')">G</button></div>
+        <button class="gb-btn" onclick="openMenu('menu')">BACK</button>
     </div>
 
     <!-- SHOP -->
     <div id="shopMenu" class="overlay">
-        <h1 style="color: #ffd700; text-shadow: 0 0 20px #ffd700;">SHOP</h1>
+        <h1 style="color: #ffd700;">SHOP</h1>
         <div id="vCoins" style="color:#ffd700; margin-bottom:10px; font-size: 20px;">Coins: 0</div>
         <div class="shop-grid" id="skinList"></div>
-        <button class="shop-btn" onclick="openMenu('menu')">BACK</button>
+        <button class="gb-btn shop-btn" onclick="openMenu('menu')">BACK</button>
     </div>
 
     <canvas id="game"></canvas>
@@ -92,7 +93,6 @@
         let owned = JSON.parse(localStorage.getItem('gb_s')) ||;
         let sel = parseInt(localStorage.getItem('gb_sel')) || 0;
         let keys = { left: 'KeyA', right: 'KeyD', ability: 'KeyG' };
-        let keyLabels = { left: 'A', right: 'D', ability: 'G' };
         let activeKeys = {};
 
         const skinAbilities = ["Dash", "SlowMo", "Shield", "DoubleCoins", "Magnet"];
@@ -102,8 +102,7 @@
         window.addEventListener('keydown', e => {
             if(remapMode) {
                 keys[remapTarget] = e.code;
-                keyLabels[remapTarget] = e.key.toUpperCase();
-                document.getElementById('key'+remapTarget.charAt(0).toUpperCase()+remapTarget.slice(1)).innerText = keyLabels[remapTarget];
+                document.getElementById('key'+remapTarget.charAt(0).toUpperCase()+remapTarget.slice(1)).innerText = e.key.toUpperCase();
                 remapMode = false; return;
             }
             activeKeys[e.code] = true;
@@ -112,7 +111,7 @@
         window.addEventListener('keyup', e => activeKeys[e.code] = false);
 
         let remapMode = false, remapTarget = '';
-        function remap(target) { remapMode = true; remapTarget = target; document.getElementById('key'+target.charAt(0).toUpperCase()+target.slice(1)).innerText = '...'; }
+        function remap(target) { remapMode = true; remapTarget = target; document.getElementById('key'+target.charAt(0).toUpperCase()+target.slice(1)).innerText = 'WAIT...'; }
 
         function openMenu(id) {
             document.querySelectorAll('.overlay').forEach(o => o.style.display = 'none');
@@ -124,7 +123,7 @@
             const list = document.getElementById('skinList'); list.innerHTML = '';
             skins.forEach(s => {
                 const isOwned = owned.includes(s.id);
-                list.innerHTML += `<div class="skin-card ${sel==s.id?'selected':''}" onclick="buy(${s.id})">
+                list.innerHTML += `<div class="skin-card" onclick="buy(${s.id})" style="border-color:${sel==s.id?'#ffd700':'#444'}; background:${sel==s.id?'#221e00':'#111'}">
                     <div style="width:20px;height:20px;background:${s.color};margin:auto;border-radius:${s.id > 25 ? '50%' : '0'}"></div>
                     ${isOwned ? 'OWNED' : s.price+'C'}<br><span style="color:#ffd700">${s.power}</span></div>`;
             });
@@ -147,8 +146,7 @@
             const p = skins[sel].power;
             if(p === "Dash") player.x += activeKeys[keys.left] ? -250 : 250;
             if(p === "SlowMo") obstacles.forEach(o => o.s /= 2);
-            abilityCooldown = 100;
-            shake = 10;
+            abilityCooldown = 100; shake = 10;
         }
 
         function start() {
@@ -185,7 +183,8 @@
                 o.y += o.s; ctx.fillStyle = "white"; ctx.fillRect(o.x-15, o.y, 30, 30);
                 if(o.y > player.y-15 && Math.abs(o.x - player.x) < 25) {
                     active = false; shake = 30; if(score > high) high = score; save();
-                    setTimeout(() => openMenu('menu'), 1000);
+                    document.getElementById('deathScore').innerText = "SCORE: " + score;
+                    openMenu('deathMenu');
                 }
                 if(o.y > canvas.height) { obstacles.splice(i, 1); score++; }
             });
@@ -196,7 +195,6 @@
             ctx.fillStyle = skins[sel].color;
             if(skins[sel].id > 25) { ctx.beginPath(); ctx.arc(player.x, player.y+15, 15, 0, Math.PI*2); ctx.fill(); }
             else { ctx.fillRect(player.x-15, player.y, 30, 30); }
-            
             if(shake > 0) ctx.restore();
             frame++; requestAnimationFrame(loop);
         }
@@ -204,4 +202,5 @@
     </script>
 </body>
 </html>
+
 
