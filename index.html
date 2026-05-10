@@ -5,46 +5,33 @@
     <title>Void Jump | Glitch Bound Studios</title>
     <style>
         body { margin: 0; background: #050505; color: white; font-family: 'Courier New', monospace; overflow: hidden; text-align: center; }
-        canvas { background: #000; display: block; margin: 0 auto; border-bottom: 5px solid #333; transition: background 0.3s; }
+        canvas { background: #000; display: block; margin: 0 auto; border-bottom: 5px solid #333; }
         .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.96); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 100; }
-        #settingsMenu, #shopMenu, #menu, #nameMenu, #pauseMenu { display: none; }
+        #settingsMenu, #shopMenu, #menu, #nameMenu, #gameOver { display: none; }
         h1 { font-size: 60px; color: #00ffcc; text-shadow: 0 0 20px #00ffcc; margin: 10px; }
         .studio-name { color: #ff00ff; font-size: 14px; letter-spacing: 3px; margin-bottom: 20px; }
         input { background: #111; border: 2px solid #ff00ff; color: white; padding: 12px; font-size: 18px; text-align: center; margin: 10px; outline: none; }
         button { background: transparent; color: #00ffcc; border: 2px solid #00ffcc; padding: 10px 25px; font-size: 16px; cursor: pointer; margin: 5px; border-radius: 4px; transition: 0.2s; }
         button:hover { background: #00ffcc; color: black; }
-        #ui { position: absolute; top: 15px; left: 15px; text-align: left; font-size: 16px; color: #00ffcc; pointer-events: none; z-index: 10; line-height: 1.4; }
-        .shop-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin: 15px; max-height: 300px; overflow-y: auto; padding: 10px; border: 1px solid #333; }
-        .skin-card { border: 1px solid #444; padding: 8px; cursor: pointer; background: #111; width: 80px; font-size: 10px; }
+        #ui { position: absolute; top: 15px; left: 15px; text-align: left; font-size: 16px; color: #00ffcc; pointer-events: none; z-index: 10; }
+        .shop-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin: 15px; max-height: 350px; overflow-y: auto; padding: 10px; border: 1px solid #333; }
+        .skin-card { border: 1px solid #444; padding: 8px; cursor: pointer; background: #111; width: 85px; font-size: 10px; }
         .selected { border-color: #00ffcc; background: #003333; }
-        #watermark { position: absolute; bottom: 10px; left: 10px; font-size: 11px; color: rgba(255,255,255,0.2); pointer-events: none; }
-        #troll-msg { position: absolute; top: 40%; width: 100%; color: red; font-size: 40px; font-weight: bold; display: none; z-index: 200; }
+        #leaderboardTable { margin: 20px; border-collapse: collapse; width: 300px; }
+        #leaderboardTable td { border: 1px solid #333; padding: 5px; }
+        .ability-text { font-size: 10px; color: #ff00ff; margin-top: 5px; }
     </style>
 </head>
 <body>
-    <div id="troll-msg">CHEATER DETECTED: TERMINATING...</div>
-    <div id="watermark">GLITCH BOUND STUDIOS | VOID JUMP v3.5 | JUICE UPDATE</div>
-    
     <div id="ui">
-        ID: <span id="ui-id">?</span> | LVL: <span id="ui-lvl">1</span><br>
+        ID: <span id="ui-id">?</span><br>
         COINS: <span id="ui-coins" style="color:#ffd700">0</span><br>
         BEST: <span id="ui-best">0</span>
     </div>
 
-    <!-- AUDIO ELEMENTS -->
-    <script>
-        const sfx = {
-            music: new Audio('https://soundimage.org'),
-            coin: new Audio('https://readthedocs.io'),
-            death: new Audio('https://patrickdearteaga.com'),
-            revive: new Audio('https://freesound.org')
-        };
-        sfx.music.loop = true; sfx.music.volume = 0.4; sfx.coin.volume = 0.3;
-    </script>
-
-    <!-- LOGIN SCREEN -->
+    <!-- IDENTITY MENU -->
     <div id="nameMenu" class="overlay" style="display:flex">
-        <div class="studio-name">GLITCH BOUND SECURE LOGIN</div>
+        <div class="studio-name">GLITCH BOUND LOGIN</div>
         <h1>IDENTITY?</h1>
         <input type="text" id="userIn" placeholder="USERNAME">
         <input type="password" id="passIn" placeholder="PASSWORD">
@@ -55,28 +42,38 @@
     <div id="menu" class="overlay">
         <div class="studio-name">GLITCH BOUND STUDIOS</div>
         <h1>VOID JUMP</h1>
-        <p id="welcomeBack"></p>
         <button onclick="startGame()">START RUN</button>
-        <button onclick="toggleMenu('shopMenu', true)" style="color:#ffd700; border-color:#ffd700;">SHOP (50 SKINS)</button>
-        <button onclick="toggleMenu('settingsMenu', true)">SETTINGS</button>
-        <button onclick="location.reload()">LOGOUT</button>
+        <button onclick="toggleMenu('shopMenu', true)">THE VAULT (SKINS)</button>
+        <button onclick="toggleMenu('leaderboard', true)">LEADERBOARD</button>
+        <button onclick="location.reload()" style="font-size:10px; color:#666; border:none;">LOGOUT</button>
     </div>
 
-    <!-- SETTINGS -->
-    <div id="settingsMenu" class="overlay">
-        <h1>SETTINGS</h1>
-        <div style="margin:10px">LEFT: <button id="lKey" onclick="rebinding='left'">A</button></div>
-        <div style="margin:10px">RIGHT: <button id="rKey" onclick="rebinding='right'">D</button></div>
-        <button onclick="toggleMenu('settingsMenu', false)">BACK</button>
+    <!-- LEADERBOARD -->
+    <div id="leaderboard" class="overlay">
+        <h1>GLOBAL RANKS</h1>
+        <table id="leaderboardTable">
+            <tr style="color:#ff00ff"><td>1</td><td>GlitchBoundStudio</td><td>999,999</td></tr>
+            <tr><td>2</td><td>Void_Master</td><td>4,200</td></tr>
+            <tr><td>3</td><td>ShadowRunner</td><td>3,850</td></tr>
+            <tr><td>4</td><td><span id="lb-name">You</span></td><td><span id="lb-score">0</span></td></tr>
+        </table>
+        <button onclick="toggleMenu('leaderboard', false)">BACK</button>
     </div>
 
     <!-- SHOP -->
     <div id="shopMenu" class="overlay">
         <h1>THE VAULT</h1>
         <div id="shopCoinDisplay" style="color:#ffd700">Coins: 0</div>
-        <button onclick="rollBox()" style="background:#ff00ff; color:white; border:none; padding:15px; cursor:pointer;">🎁 MYSTERY BOX (25C)</button>
         <div class="shop-grid" id="skinList"></div>
         <button onclick="toggleMenu('shopMenu', false)">BACK</button>
+    </div>
+
+    <!-- GAME OVER SCREEN -->
+    <div id="gameOver" class="overlay">
+        <h1 style="color:red">VOID CRASHED</h1>
+        <p id="finalScoreText"></p>
+        <button onclick="startGame()">RETRY</button>
+        <button onclick="backToMenu()">MAIN MENU</button>
     </div>
 
     <canvas id="game"></canvas>
@@ -86,15 +83,24 @@
         const ctx = canvas.getContext('2d');
         canvas.width = window.innerWidth; canvas.height = window.innerHeight;
 
-        let currentUser = null, gameActive = false, isPaused = false, isTrollMode = false;
-        let score = 0, frame = 0, shake = 0, rebinding = null;
+        let currentUser = null, gameActive = false, score = 0, frame = 0;
         let player = { x: canvas.width/2, y: canvas.height - 100, size: 30 };
-        let enemies = [], voidCoins = [], particles = [];
-        let binds = JSON.parse(localStorage.getItem('vBinds')) || { left: 'KeyA', right: 'KeyD', lLab: 'A', rLab: 'D' };
+        let enemies = [], voidCoins = [];
 
+        // --- SKIN DATA WITH ABILITIES ---
         const skinColors = ['#00ffcc','#ff00ff','#ffd700','#ff4400','#22ff22','#ffffff','#9900ff','#0099ff','#ff1493','#7fff00'];
+        const abilities = ["Speed: +10%", "Ability: Dash", "Passive: 2x Coins", "Ability: Shield", "Speed: +15%"];
         const skins = [];
-        for(let i=0; i<50; i++) skins.push({ id: i, name: 'Skin ' + (i+1), color: skinColors[i % 10], price: (i * 20), shape: i > 25 ? 'cir' : 'sq' });
+        for(let i=0; i<50; i++) {
+            skins.push({ 
+                id: i, 
+                name: 'Skin ' + (i+1), 
+                color: skinColors[i % 10], 
+                price: (i * 25), 
+                ability: abilities[i % 5],
+                shape: i > 25 ? 'cir' : 'sq'
+            });
+        }
 
         async function hash(s) {
             const utf8 = new TextEncoder().encode(s);
@@ -104,40 +110,30 @@
 
         async function handleAuth() {
             const u = document.getElementById('userIn').value, p = document.getElementById('passIn').value, h = await hash(p);
-            if (u === "GlitchBoundStudio" && h === "9918739958742d131f479e390c588e2c39e2463e23976839352e0964177b947c") {
-                login({ name: "GlitchBoundStudio", coins: 9999999, high: 0, lvl: 99, owned: skins.map(s=>s.id), sel: 1, isAdmin: true });
+            // ADMIN CREDENTIALS: glitchboundstudio / glitchboundstudio
+            if (u === "glitchboundstudio" && h === "9918739958742d131f479e390c588e2c39e2463e23976839352e0964177b947c") {
+                login({ name: "GlitchBoundStudio", coins: 9999999, high: 999999, owned: skins.map(s=>s.id), sel: 2, isAdmin: true });
                 return;
             }
             let users = JSON.parse(localStorage.getItem('vj_users')) || {};
-            if (users[u]) {
-                if (users[u].pass === p) {
-                    const sig = await hash(users[u].coins.toString());
-                    if (users[u].sig !== sig) triggerTroll(); else login(users[u]);
-                } else alert("ACCESS DENIED.");
-            } else {
-                let newUser = { name: u, pass: p, coins: 0, high: 0, lvl: 1, owned:[0], sel: 0, sig: await hash("0") };
+            if (users[u] && users[u].pass === p) { login(users[u]); }
+            else if (!users[u]) {
+                let newUser = { name: u, pass: p, coins: 0, high: 0, owned:, sel: 0 };
                 users[u] = newUser; localStorage.setItem('vj_users', JSON.stringify(users)); login(newUser);
-            }
+            } else { alert("ACCESS DENIED."); }
         }
 
         function login(data) {
             currentUser = data; document.getElementById('nameMenu').style.display = 'none';
             document.getElementById('menu').style.display = 'flex';
             document.getElementById('ui-id').innerText = currentUser.name.toUpperCase();
+            document.getElementById('lb-name').innerText = currentUser.name;
             updateUI();
         }
 
-        function triggerTroll() {
-            isTrollMode = true; document.getElementById('nameMenu').style.display = 'none';
-            document.getElementById('troll-msg').style.display = 'block';
-            canvas.style.background = "darkred"; startGame();
-        }
-
-        function toggleMenu(id, show) {
-            document.getElementById(id).style.display = show ? 'flex' : 'none';
-            if(id === 'shopMenu') renderShop();
-            if(id === 'settingsMenu') { document.getElementById('lKey').innerText = binds.lLab; document.getElementById('rKey').innerText = binds.rLab; }
-        }
+        function toggleMenu(id, show) { document.getElementById(id).style.display = show ? 'flex' : 'none'; if(id === 'shopMenu') renderShop(); }
+        
+        function backToMenu() { document.getElementById('gameOver').style.display = 'none'; document.getElementById('menu').style.display = 'flex'; }
 
         function renderShop() {
             const list = document.getElementById('skinList'); list.innerHTML = '';
@@ -145,102 +141,65 @@
                 const owned = currentUser.owned.includes(s.id);
                 list.innerHTML += `<div class="skin-card ${currentUser.sel==s.id?'selected':''}" onclick="buySkin(${s.id})">
                     <div style="width:20px;height:20px;background:${s.color};margin:auto;border-radius:${s.shape=='cir'?'50%':'0'}"></div>
-                    ${s.name}<br>${owned ? 'OWNED' : s.price+'C'}</div>`;
+                    ${s.name}<br>${owned ? 'OWNED' : s.price+'C'}
+                    <div class="ability-text">${s.ability}</div></div>`;
             });
             document.getElementById('shopCoinDisplay').innerText = "Coins: " + currentUser.coins;
         }
 
-        async function buySkin(id) {
+        function buySkin(id) {
             const s = skins[id];
             if(currentUser.owned.includes(id)) currentUser.sel = id;
             else if(currentUser.coins >= s.price) { currentUser.coins -= s.price; currentUser.owned.push(id); currentUser.sel = id; }
-            await save(); renderShop(); updateUI();
+            save(); renderShop(); updateUI();
         }
 
-        async function rollBox() {
-            const unowned = skins.filter(s => !currentUser.owned.includes(s.id));
-            if(currentUser.coins >= 25 && unowned.length > 0) {
-                currentUser.coins -= 25; const prize = unowned[Math.floor(Math.random()*unowned.length)];
-                currentUser.owned.push(prize.id); await save(); updateUI(); renderShop();
-                alert("BOX UNLOCKED: " + prize.name);
-            }
-        }
+        function save() { if(currentUser.isAdmin) return; let users = JSON.parse(localStorage.getItem('vj_users')); users[currentUser.name] = currentUser; localStorage.setItem('vj_users', JSON.stringify(users)); }
+        function updateUI() { document.getElementById('ui-coins').innerText = currentUser.coins; document.getElementById('ui-best').innerText = currentUser.high; document.getElementById('lb-score').innerText = currentUser.high; }
 
-        async function save() {
-            if(currentUser.isAdmin) return;
-            let users = JSON.parse(localStorage.getItem('vj_users'));
-            currentUser.sig = await hash(currentUser.coins.toString());
-            users[currentUser.name] = currentUser; localStorage.setItem('vj_users', JSON.stringify(users));
-        }
+        window.addEventListener('mousemove', e => { if(gameActive) player.x = e.clientX; });
 
-        function updateUI() {
-            document.getElementById('ui-coins').innerText = currentUser.coins;
-            document.getElementById('ui-best').innerText = currentUser.high;
-            document.getElementById('ui-lvl').innerText = currentUser.lvl;
-        }
-
-        window.addEventListener('keydown', (e) => {
-            if (rebinding) {
-                binds[rebinding === 'left' ? 'left' : 'right'] = e.code;
-                binds[rebinding === 'left' ? 'lLab' : 'rLab'] = e.key.toUpperCase();
-                localStorage.setItem('vBinds', JSON.stringify(binds));
-                rebinding = null; toggleMenu('settingsMenu', true); return;
-            }
-            if (!gameActive) return;
-            if (e.code === binds.left) player.x -= 45;
-            if (e.code === binds.right) player.x += 45;
-            player.x = Math.max(20, Math.min(canvas.width - 20, player.x));
-            for(let i=0; i<3; i++) spawnParticle(player.x, player.y+15, skins[currentUser.sel].color);
-        });
-
-        function spawnParticle(x, y, color) { particles.push({ x, y, vx: (Math.random()-0.5)*5, vy: Math.random()*3, life: 1, color }); }
-
-        function startGame() {
-            document.getElementById('menu').style.display = 'none';
-            score = 0; enemies = []; voidCoins = []; particles = []; frame = 0;
-            gameActive = true; sfx.music.play(); animate();
+        function startGame() { 
+            document.getElementById('menu').style.display = 'none'; 
+            document.getElementById('gameOver').style.display = 'none'; 
+            score = 0; enemies = []; voidCoins = []; gameActive = true; frame = 0; animate(); 
         }
 
         function animate() {
             if (!gameActive) return;
-            let ox = 0, oy = 0; if (shake > 0) { ox = Math.random()*10-5; oy = Math.random()*10-5; shake--; }
-            ctx.save(); ctx.translate(ox, oy);
-            ctx.fillStyle = isTrollMode ? "rgba(50,0,0,0.3)" : "rgba(0,0,0,0.3)";
-            ctx.fillRect(0,0,canvas.width,canvas.height);
+            ctx.fillStyle = "rgba(0,0,0,0.3)"; ctx.fillRect(0,0,canvas.width,canvas.height);
 
-            const s = skins[currentUser.sel];
-            if (frame % 15 === 0) enemies.push({ x: Math.random()*canvas.width, y: -50, speed: isTrollMode ? 15 : 5 + (score/100) });
-            if (frame % 80 === 0 && !isTrollMode) voidCoins.push({ x: Math.random()*canvas.width, y: -50, speed: 4 });
-
-            particles.forEach((p, i) => { p.x += p.vx; p.y += p.vy; p.life -= 0.03; ctx.globalAlpha = p.life; ctx.fillStyle = p.color; ctx.fillRect(p.x, p.y, 4, 4); if(p.life <= 0) particles.splice(i, 1); });
-            ctx.globalAlpha = 1;
+            if (frame % 15 === 0) enemies.push({ x: Math.random()*canvas.width, y: -50, speed: 5 + (score/100) });
+            if (frame % 80 === 0) voidCoins.push({ x: Math.random()*canvas.width, y: -50, speed: 4 });
 
             voidCoins.forEach((c, i) => {
                 c.y += c.speed; ctx.fillStyle = '#ffd700'; ctx.beginPath(); ctx.arc(c.x, c.y, 8, 0, Math.PI*2); ctx.fill();
-                if (Math.hypot(player.x - c.x, player.y - c.y) < 30) { voidCoins.splice(i, 1); currentUser.coins += 2; updateUI(); sfx.coin.play(); save(); }
+                if (Math.hypot(player.x - c.x, player.y - c.y) < 30) { 
+                    voidCoins.splice(i, 1); 
+                    currentUser.coins += (skins[currentUser.sel].ability.includes('2x') ? 2 : 1); 
+                    updateUI(); save(); 
+                }
             });
 
             enemies.forEach((en, i) => {
-                en.y += en.speed; ctx.fillStyle = isTrollMode ? "red" : "white"; ctx.fillRect(en.x, en.y, 30, 30);
+                en.y += en.speed; ctx.fillStyle = "white"; ctx.fillRect(en.x, en.y, 30, 30);
                 if (en.y + 30 > player.y && Math.abs(en.x - player.x) < 25) {
-                    gameActive = false; sfx.music.pause(); sfx.death.play(); shake = 20;
-                    setTimeout(() => {
-                        if(confirm("REVIVE FOR 50 COINS?")) {
-                            if(currentUser.coins >= 50) { currentUser.coins -= 50; sfx.revive.play(); gameActive = true; animate(); save(); updateUI(); }
-                            else { alert("Not enough coins!"); location.reload(); }
-                        } else location.reload();
-                    }, 1000);
+                    gameActive = false;
+                    if(score > currentUser.high) { currentUser.high = score; save(); updateUI(); }
+                    document.getElementById('finalScoreText').innerText = "Score: " + score;
+                    document.getElementById('gameOver').style.display = 'flex';
                 }
-                if (en.y > canvas.height) { enemies.splice(i, 1); score++; document.getElementById('scoreVal'); }
+                if (en.y > canvas.height) { enemies.splice(i, 1); score++; }
             });
 
-            ctx.fillStyle = s.color; ctx.shadowBlur = 15; ctx.shadowColor = s.color;
-            if(s.shape === 'cir') { ctx.beginPath(); ctx.arc(player.x, player.y+15, 15, 0, Math.PI*2); ctx.fill(); }
+            const s = skins[currentUser.sel];
+            ctx.fillStyle = s.color;
+            if(s.shape === 'cir') { ctx.beginPath(); ctx.arc(player.x, player.y + 15, 15, 0, Math.PI*2); ctx.fill(); }
             else { ctx.fillRect(player.x-15, player.y, 30, 30); }
-            ctx.shadowBlur = 0; ctx.restore();
             frame++; requestAnimationFrame(animate);
         }
     </script>
 </body>
 </html>
+
 
