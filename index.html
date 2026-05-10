@@ -1,90 +1,86 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Out of Sight</title>
+    <title>Out of Sight - Retro</title>
     <style>
-        body { margin: 0; overflow: hidden; background: black; color: white; font-family: sans-serif; }
-        #instructions { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 10; cursor: pointer; }
-        #crosshair { position: absolute; top: 50%; left: 50%; width: 10px; height: 10px; border: 1px solid white; border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; }
+        body { margin: 0; background: #050505; color: white; font-family: sans-serif; overflow: hidden; text-align: center; }
+        canvas { background: #111; border: 3px solid #333; display: block; margin: 20px auto; box-shadow: 0 0 20px red; }
+        #ui { position: absolute; top: 10px; width: 100%; pointer-events: none; }
     </style>
 </head>
 <body>
-    <div id="instructions">
-        <h1 style="color:red; font-size: 50px; margin:0;">OUT OF SIGHT</h1>
-        <p>CLICK TO START</p>
+    <div id="ui">
+        <h1>OUT OF SIGHT</h1>
+        <p>Use WASD to Move. Find the Yellow Key and Escape!</p>
     </div>
-    <div id="crosshair"></div>
-
-    <script src="https://cloudflare.com"></script>
+    <canvas id="game"></canvas>
 
     <script>
-        let scene, camera, renderer, chaser;
-        let moveF = false, moveB = false, moveL = false, moveR = false;
+        const canvas = document.getElementById('game');
+        const ctx = canvas.getContext('2d');
+        canvas.width = 800; canvas.height = 600;
 
-        function init() {
-            scene = new THREE.Scene();
-            scene.fog = new THREE.Fog(0x000000, 1, 15);
-            camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
-            camera.position.set(0, 1.6, 5);
+        const player = { x: 100, y: 100, size: 20, speed: 4 };
+        const man = { x: 600, y: 400, size: 25, speed: 1.5 };
+        const key = { x: 400, y: 300, size: 15, collected: false };
+        const door = { x: 750, y: 20, w: 40, h: 60 };
+        const keys = {};
 
-            renderer = new THREE.WebGLRenderer({ antialias: true });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            document.body.appendChild(renderer.domElement);
+        window.addEventListener('keydown', e => keys[e.code] = true);
+        window.addEventListener('keyup', e => keys[e.code] = false);
 
-            const light = new THREE.PointLight(0xffffff, 1, 20);
-            camera.add(light);
-            scene.add(camera);
+        function update() {
+            // Movement
+            if (keys['KeyW']) player.y -= player.speed;
+            if (keys['KeyS']) player.y += player.speed;
+            if (keys['KeyA']) player.x -= player.speed;
+            if (keys['KeyD']) player.x += player.speed;
 
-            // FLOOR (Solid Green for now to test)
-            const floor = new THREE.Mesh(new THREE.PlaneGeometry(50,50), new THREE.MeshPhongMaterial({color: 0x113311}));
-            floor.rotation.x = -Math.PI/2;
-            scene.add(floor);
+            // Simple AI Chase
+            let dx = player.x - man.x;
+            let dy = player.y - man.y;
+            let angle = Math.atan2(dy, dx);
+            man.x += Math.cos(angle) * man.speed;
+            man.y += Math.sin(angle) * man.speed;
 
-            // THE MAN (A Red Box so it can't fail to load)
-            const manGeo = new THREE.BoxGeometry(1, 2.5, 1);
-            const manMat = new THREE.MeshPhongMaterial({color: 0xff0000});
-            chaser = new THREE.Mesh(manGeo, manMat);
-            chaser.position.set(0, 1.25, -10);
-            scene.add(chaser);
-
-            document.getElementById('instructions').addEventListener('click', () => {
-                document.getElementById('instructions').style.display = 'none';
-                document.body.requestPointerLock();
-            });
-
-            document.addEventListener('mousemove', (e) => {
-                if (document.pointerLockElement === document.body) {
-                    camera.rotation.y -= e.movementX * 0.002;
-                }
-            });
-            camera.rotation.order = 'YXZ';
-        }
-
-        function animate() {
-            requestAnimationFrame(animate);
-            if (moveF) camera.translateZ(-0.1);
-            if (moveB) camera.translateZ(0.1);
-            if (moveL) camera.translateX(-0.1);
-            if (moveR) camera.translateX(0.1);
-
-            if(chaser) {
-                const dir = new THREE.Vector3().subVectors(camera.position, chaser.position).normalize();
-                chaser.position.x += dir.x * 0.03;
-                chaser.position.z += dir.z * 0.03;
-                if(camera.position.distanceTo(chaser.position) < 1.5) {
-                    alert("CAUGHT!");
-                    location.reload();
-                }
+            // Collisions
+            if (Math.hypot(player.x - man.x, player.y - man.y) < player.size) {
+                alert("THE MAN CAUGHT YOU!"); location.reload();
             }
-            renderer.render(scene, camera);
+            if (!key.collected && Math.hypot(player.x - key.x, player.y - key.y) < player.size) {
+                key.collected = true;
+            }
+            if (key.collected && player.x > door.x) {
+                alert("YOU ESCAPED!"); location.reload();
+            }
         }
 
-        document.addEventListener('keydown', (e) => { if(e.code === 'KeyW') moveF = true; if(e.code === 'KeyS') moveB = true; if(e.code === 'KeyA') moveL = true; if(e.code === 'KeyD') moveR = true; });
-        document.addEventListener('keyup', (e) => { if(e.code === 'KeyW') moveF = false; if(e.code === 'KeyS') moveB = false; if(e.code === 'KeyA') moveL = false; if(e.code === 'KeyD') moveR = false; });
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Door
+            ctx.fillStyle = key.collected ? 'green' : 'maroon';
+            ctx.fillRect(door.x, door.h, door.w, door.h);
 
-        init(); animate();
+            // Key
+            if (!key.collected) {
+                ctx.fillStyle = 'gold';
+                ctx.fillRect(key.x, key.y, key.size, key.size);
+            }
+
+            // Player (You)
+            ctx.fillStyle = 'royalblue';
+            ctx.fillRect(player.x, player.y, player.size, player.size);
+
+            // The Man
+            ctx.fillStyle = 'red';
+            ctx.fillRect(man.x, man.y, man.size, man.size);
+
+            update();
+            requestAnimationFrame(draw);
+        }
+        draw();
     </script>
 </body>
 </html>
-
 
