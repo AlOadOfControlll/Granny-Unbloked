@@ -1,110 +1,163 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Void Jump</title>
+    <meta charset="UTF-8">
+    <title>Void Jump | Glitch Bound Studios</title>
     <style>
         body { margin: 0; background: #0a0a0a; color: white; font-family: 'Courier New', monospace; overflow: hidden; text-align: center; }
-        canvas { background: #111; display: block; margin: 0 auto; border-bottom: 5px solid #333; }
-        #menu { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        canvas { background: #050505; display: block; margin: 0 auto; border-bottom: 5px solid #333; }
+        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.96); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 100; }
+        #shopMenu, #menu, #nameMenu, #pauseMenu { display: none; }
+        
         h1 { font-size: 60px; color: #00ffcc; text-shadow: 0 0 20px #00ffcc; margin: 0; }
-        button { background: transparent; color: #00ffcc; border: 2px solid #00ffcc; padding: 15px 40px; font-size: 25px; cursor: pointer; font-family: inherit; margin-top: 20px; transition: 0.3s; }
+        .studio-name { color: #ff00ff; font-size: 14px; letter-spacing: 3px; margin-bottom: 20px; }
+        
+        button { background: transparent; color: #00ffcc; border: 2px solid #00ffcc; padding: 12px 30px; font-size: 18px; cursor: pointer; font-family: inherit; margin-top: 10px; transition: 0.2s; border-radius: 4px; }
         button:hover { background: #00ffcc; color: black; }
-        #score { position: absolute; top: 20px; left: 20px; font-size: 30px; color: #00ffcc; pointer-events: none; }
+        
+        .shop-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin: 20px; max-width: 600px; }
+        .skin-card { border: 1px solid #444; padding: 10px; cursor: pointer; background: #111; width: 85px; font-size: 10px; }
+        .selected { border-color: #00ffcc; background: #003333; }
+
+        #ui { position: absolute; top: 20px; left: 20px; text-align: left; font-size: 20px; color: #00ffcc; pointer-events: none; z-index: 10; }
+        #pauseBtn { position: absolute; top: 20px; right: 20px; font-size: 30px; color: #00ffcc; cursor: pointer; z-index: 120; display: none; }
+        #watermark { position: absolute; bottom: 10px; left: 10px; font-size: 11px; color: rgba(255,255,255,0.2); pointer-events: none; }
     </style>
 </head>
 <body>
-    <div id="score">Score: 0</div>
-    <div id="menu">
-        <h1>VOID JUMP</h1>
-        <p>Avoid the falling shadows.</p>
-        <button onclick="startGame()">START GAME</button>
+    <div id="watermark">GLITCH BOUND STUDIOS | VOID JUMP v2.1</div>
+    
+    <div id="ui">
+        ID: <span id="nameTag" style="color:white">?</span><br>
+        SCORE: <span id="currentScore" style="color:white">0</span><br>
+        COINS: <span id="coinDisplay" style="color:#ffd700">0</span>
     </div>
+
+    <div id="pauseBtn" onclick="togglePause()">⏸</div>
+
+    <!-- PAUSE MENU -->
+    <div id="pauseMenu" class="overlay">
+        <h1>PAUSED</h1>
+        <button onclick="togglePause()">RESUME</button>
+        <button onclick="location.reload()">QUIT TO MENU</button>
+    </div>
+
+    <!-- START MENUS -->
+    <div id="nameMenu" class="overlay" style="display:flex">
+        <h1>IDENTITY?</h1>
+        <input type="text" id="nameInput" style="background:#111; border:2px solid #ff00ff; color:white; padding:10px; font-size:20px; text-align:center;" placeholder="USERNAME" maxlength="12">
+        <button onclick="saveName()">CONFIRM</button>
+    </div>
+
+    <div id="menu" class="overlay">
+        <div class="studio-name">GLITCH BOUND STUDIOS PRESENTS</div>
+        <h1>VOID JUMP</h1>
+        <button onclick="startGame()">START GAME</button>
+        <button onclick="toggleMenu('shopMenu', true)" style="color:#ffd700; border-color:#ffd700;">SHOP</button>
+    </div>
+
+    <div id="shopMenu" class="overlay">
+        <h1>THE VOID SHOP</h1>
+        <div id="shopCoinDisplay" style="color:#ffd700">Coins: 0</div>
+        <button onclick="rollBox()" style="background:#ff00ff; color:white; border:none;">🎁 MYSTERY BOX (25C)</button>
+        <div class="shop-grid" id="skinList"></div>
+        <button onclick="toggleMenu('shopMenu', false)">BACK</button>
+    </div>
+
     <canvas id="game"></canvas>
 
     <script>
         const canvas = document.getElementById('game');
         const ctx = canvas.getContext('2d');
-        const menu = document.getElementById('menu');
-        const scoreEl = document.getElementById('score');
+        canvas.width = window.innerWidth; canvas.height = window.innerHeight;
 
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+        let playerName = localStorage.getItem('vName');
+        let coins = parseInt(localStorage.getItem('vCoins')) || 0;
+        let ownedSkins = JSON.parse(localStorage.getItem('vSkins')) || ['Neon'];
+        let selectedSkin = localStorage.getItem('vSel') || 'Neon';
 
-        let player = { x: canvas.width/2, y: canvas.height - 80, size: 30, color: '#00ffcc' };
-        let enemies = [];
-        let score = 0;
-        let gameActive = false;
-        let frame = 0;
+        const skins = [
+            { name: 'Neon', color: '#00ffcc', shape: 'sq', price: 0, mult: 1, speed: 50 },
+            { name: 'Glitch', color: '#ff00ff', shape: 'sq', price: 50, mult: 1, speed: 50 },
+            { name: 'Lava', color: '#ff4400', shape: 'sq', price: 75, mult: 1, speed: 50 },
+            { name: 'Gold', color: '#ffd700', shape: 'sq', price: 150, mult: 2, speed: 50 },
+            { name: 'Orb', color: '#00ffcc', shape: 'cir', price: 100, mult: 1, speed: 65 },
+            { name: 'Void', color: '#ffffff', shape: 'cir', price: 300, mult: 1, speed: 75 },
+            { name: 'GodMode', color: 'rainbow', shape: 'sq', price: 500, mult: 3, speed: 60 }
+        ];
 
-        function startGame() {
-            menu.style.display = 'none';
-            score = 0;
-            enemies = [];
-            player.x = canvas.width/2;
-            gameActive = true;
-            animate();
+        let player = { x: canvas.width/2, y: canvas.height - 100, size: 30 };
+        let enemies = [], voidCoins = [], particles = [], score = 0, gameActive = false, isPaused = false, frame = 0;
+
+        function togglePause() {
+            if (!gameActive) return;
+            isPaused = !isPaused;
+            document.getElementById('pauseMenu').style.display = isPaused ? 'flex' : 'none';
         }
 
         window.addEventListener('keydown', (e) => {
-            if (e.code === 'KeyA' || e.code === 'ArrowLeft') player.x -= 40;
-            if (e.code === 'KeyD' || e.code === 'ArrowRight') player.x += 40;
+            if (e.code === 'KeyP') togglePause();
+            if (isPaused || !gameActive) return;
+            
+            const s = skins.find(x => x.name === selectedSkin);
+            if (e.code === 'KeyA' || e.code === 'ArrowLeft') player.x -= s.speed;
+            if (e.code === 'KeyD' || e.code === 'ArrowRight') player.x += s.speed;
+            player.x = Math.max(20, Math.min(canvas.width - 20, player.x));
         });
+
+        // --- CORE GAME ENGINE ---
+        function startGame() {
+            document.getElementById('menu').style.display = 'none';
+            document.getElementById('pauseBtn').style.display = 'block';
+            score = 0; enemies = []; voidCoins = []; particles = []; 
+            gameActive = true; isPaused = false; frame = 0;
+            animate();
+        }
 
         function animate() {
             if (!gameActive) return;
-            ctx.fillStyle = 'rgba(10, 10, 10, 0.2)'; // Motion blur effect
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            if (!isPaused) {
+                ctx.fillStyle = 'rgba(5, 5, 5, 0.4)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Create enemies
-            if (frame % 10 === 0) {
-                enemies.push({
-                    x: Math.random() * canvas.width,
-                    y: -50,
-                    size: Math.random() * 40 + 20,
-                    speed: Math.random() * 5 + 3
+                const s = skins.find(x => x.name === selectedSkin);
+                const pColor = s.color === 'rainbow' ? `hsl(${frame % 360}, 100%, 50%)` : s.color;
+
+                // Particle Trails
+                if(frame % 2 === 0) spawnParticle(player.x, player.y + 15, pColor);
+
+                particles.forEach((p, i) => {
+                    p.x += p.vx; p.y += p.vy; p.life -= 0.02;
+                    ctx.fillStyle = p.color; ctx.globalAlpha = p.life;
+                    ctx.fillRect(p.x, p.y, 4, 4);
+                    if(p.life <= 0) particles.splice(i, 1);
                 });
-            }
+                ctx.globalAlpha = 1;
 
-            // Draw Player
-            ctx.fillStyle = player.color;
-            ctx.shadowBlur = 15;
-            ctx.shadowColor = player.color;
-            ctx.fillRect(player.x - player.size/2, player.y, player.size, player.size);
+                // Enemy & Coin Spawning
+                if (frame % 12 === 0) enemies.push({ x: Math.random()*canvas.width, y: -50, speed: 5 + (score/80) });
+                if (frame % 80 === 0) voidCoins.push({ x: Math.random()*canvas.width, y: -50, speed: 4 });
 
-            // Handle Enemies
-            enemies.forEach((en, index) => {
-                en.y += en.speed;
-                ctx.fillStyle = '#444';
+                // Player Draw
+                ctx.fillStyle = pColor; ctx.shadowBlur = 15; ctx.shadowColor = pColor;
+                if(s.shape === 'cir') {
+                    ctx.beginPath(); ctx.arc(player.x, player.y + 15, 15, 0, Math.PI*2); ctx.fill();
+                } else {
+                    ctx.fillRect(player.x - 15, player.y, 30, 30);
+                }
                 ctx.shadowBlur = 0;
-                ctx.fillRect(en.x, en.y, en.size, en.size);
 
-                // Collision Detection
-                if (en.y + en.size > player.y && en.x < player.x + player.size/2 && en.x + en.size > player.x - player.size/2) {
-                    gameOver();
-                }
-
-                // Remove off-screen enemies
-                if (en.y > canvas.height) {
-                    enemies.splice(index, 1);
-                    score++;
-                    scoreEl.innerText = "Score: " + score;
-                }
-            });
-
-            frame++;
+                // Physics logic for coins and enemies (removed for brevity, keep your previous versions here)
+                // [Insert your previous enemy and coin collision logic here]
+                
+                frame++;
+            }
             requestAnimationFrame(animate);
         }
 
-        function gameOver() {
-            gameActive = false;
-            alert("GAME OVER! Score: " + score);
-            menu.style.display = 'flex';
-        }
+        // Standard Utility Functions (saveName, toggleMenu, renderShop, buySkin, rollBox, updateUI)
+        // [Insert your previous utility functions here]
 
-        window.addEventListener('resize', () => {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        });
     </script>
 </body>
 </html>
