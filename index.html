@@ -5,19 +5,16 @@
     <title>Void Jump | Glitch Bound Studios</title>
     <style>
         body { margin: 0; background: #050505; color: white; font-family: 'Courier New', monospace; overflow: hidden; text-align: center; }
-        canvas { background: #000; display: block; margin: 0 auto; border-bottom: 5px solid #333; }
+        canvas { background: #000; display: block; margin: 0 auto; border-bottom: 5px solid #333; box-shadow: 0 0 50px rgba(0,255,204,0.1); }
         .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.96); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 100; }
-        #settingsMenu, #shopMenu, #menu, #nameMenu, #deathMenu, #reviveMenu { display: none; }
+        #settingsMenu, #shopMenu, #menu, #nameMenu, #deathMenu { display: none; }
         h1 { font-size: 60px; color: #00ffcc; text-shadow: 0 0 20px #00ffcc; margin: 10px; }
-        .studio-name { color: #ff00ff; font-size: 14px; letter-spacing: 3px; margin-bottom: 20px; }
-        input { background: #111; border: 2px solid #ff00ff; color: white; padding: 12px; font-size: 18px; text-align: center; margin: 10px; outline: none; }
         button { background: transparent; color: #00ffcc; border: 2px solid #00ffcc; padding: 10px 25px; font-size: 16px; cursor: pointer; margin: 5px; border-radius: 4px; transition: 0.2s; }
         button:hover { background: #00ffcc; color: black; }
         #ui { position: absolute; top: 15px; left: 15px; text-align: left; font-size: 16px; color: #00ffcc; z-index: 10; pointer-events: none; }
-        .shop-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin: 15px; max-height: 250px; overflow-y: auto; padding: 10px; border: 1px solid #333; }
+        .shop-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; max-height: 250px; overflow-y: auto; padding: 10px; border: 1px solid #333; }
         .skin-card { border: 1px solid #444; padding: 8px; cursor: pointer; background: #111; width: 80px; font-size: 10px; }
         .selected { border-color: #00ffcc; background: #003333; }
-        #abilityPreview { color: #ff00ff; margin-bottom: 10px; font-size: 14px; min-height: 50px; }
     </style>
 </head>
 <body>
@@ -27,54 +24,29 @@
         BEST: <span id="ui-best">0</span>
     </div>
 
-    <!-- LOGIN -->
-    <div id="nameMenu" class="overlay" style="display:flex">
-        <div class="studio-name">GLITCH BOUND SECURE LOGIN</div>
-        <h1>IDENTITY?</h1>
-        <input type="text" id="userIn" placeholder="USERNAME">
-        <input type="password" id="passIn" placeholder="PASSWORD">
-        <button onclick="handleAuth()">SYNC VOID</button>
-    </div>
-
     <!-- MAIN MENU -->
-    <div id="menu" class="overlay">
+    <div id="menu" class="overlay" style="display:flex">
         <h1>VOID JUMP</h1>
-        <div id="leaderboard" style="color:#ffd700; margin-bottom: 20px;"></div>
+        <div id="lb" style="color:#ffd700; margin-bottom: 20px;"></div>
         <button onclick="startGame()">START RUN</button>
         <button onclick="toggleMenu('shopMenu', true)">THE VAULT</button>
         <button onclick="toggleMenu('settingsMenu', true)">SETTINGS</button>
     </div>
 
+    <!-- SETTINGS -->
+    <div id="settingsMenu" class="overlay">
+        <h1>SETTINGS</h1>
+        <p>Movement: WASD / Space</p>
+        <p>Dash: SHIFT</p>
+        <button onclick="toggleMenu('menu', true)">BACK</button>
+    </div>
+
     <!-- DEATH MENU -->
     <div id="deathMenu" class="overlay">
         <h1 style="color:red">VOIDED</h1>
-        <button onclick="showReviveMenu()">REVIVE</button>
         <button onclick="startGame()">RESTART</button>
         <button onclick="toggleMenu('shopMenu', true)">SHOP</button>
-        <button onclick="toggleMenu('settingsMenu', true)">SETTINGS</button>
-    </div>
-
-    <!-- REVIVE MENU -->
-    <div id="reviveMenu" class="overlay">
-        <h1 id="reviveTitle">REVIVE?</h1>
-        <div id="adBox" style="display:none; background:#111; padding:20px; border:2px solid #ff00ff;">
-            <p>ADVERTISEMENT BY GLITCH BOUND</p>
-            <h2 id="adTimer">15</h2>
-        </div>
-        <div id="reviveButtons">
-            <button onclick="startDummyAd()">📺 WATCH AD (FREE)</button>
-            <button onclick="payRevive()">💰 PAY 100 COINS</button>
-            <button onclick="toggleMenu('deathMenu', true)">BACK</button>
-        </div>
-    </div>
-
-    <!-- SHOP -->
-    <div id="shopMenu" class="overlay">
-        <h1>THE VAULT</h1>
-        <div id="shopCoinDisplay" style="color:#ffd700">Coins: 0</div>
-        <div id="abilityPreview">Select a skin to see its unique power!</div>
-        <div class="shop-grid" id="skinList"></div>
-        <button onclick="toggleMenu('menu', true)">BACK</button>
+        <button onclick="location.reload()">LOGOUT</button>
     </div>
 
     <canvas id="game"></canvas>
@@ -84,145 +56,92 @@
         const ctx = canvas.getContext('2d');
         canvas.width = window.innerWidth; canvas.height = window.innerHeight;
 
-        let currentUser = null, gameActive = false, shakeAmount = 0;
-        let player = { x: canvas.width/2, y: canvas.height-100, vx: 0, vy: 0 };
+        // --- GAME ENGINE VARIABLES ---
+        let currentUser = { name: "PLAYER", coins: 500, high: 0, owned: [0], sel: 0 };
+        let gameActive = false, shake = 0, trail = [];
+        let player = { x: canvas.width/2, y: canvas.height-100, vx: 0, vy: 0, size: 30 };
         
-        // --- 50 UNIQUE ABILITIES ---
-        const powerNames = ["Dash", "Magnet", "SlowMo", "Shield", "DoubleJump", "GravityFlip", "Ghost", "TimeStop", "DoubleCoins", "Fly"];
         const skins = Array.from({length: 50}, (_, i) => ({
-            id: i,
-            name: 'Skin ' + (i+1),
-            color: i === 0 ? '#00ffcc' : `hsl(${i * 45}, 70%, 50%)`,
-            price: i * 50,
-            ability: powerNames[i % powerNames.length],
-            desc: `Equips the ${powerNames[i % powerNames.length]} module for specialized maneuvers.`
+            id: i, color: `hsl(${i * 45}, 70%, 50%)`, ability: i === 0 ? "DASH" : "GLIDE"
         }));
 
-        async function handleAuth() {
-            const u = document.getElementById('userIn').value, p = document.getElementById('passIn').value;
-            // ADMIN ACCESS
-            if(u === "glitchboundstudio" && p === "glitchboundstudio") {
-                login({ name: "ADMIN", coins: "∞", high: 99999, owned: skins.map(s=>s.id), sel: 0, isAdmin: true });
-                return;
-            }
-            let users = JSON.parse(localStorage.getItem('vj_users')) || {};
-            if(users[u]) login(users[u]);
-            else {
-                let newUser = { name: u, pass: p, coins: 0, high: 0, owned: [0], sel: 0 };
-                users[u] = newUser; localStorage.setItem('vj_users', JSON.stringify(users)); login(newUser);
-            }
+        // --- SOUND ENGINE (NO FILES NEEDED) ---
+        const audio = new (window.AudioContext || window.webkitAudioContext)();
+        function playTone(freq, type, dur) {
+            const osc = audio.createOscillator();
+            const gain = audio.createGain();
+            osc.type = type; osc.frequency.setValueAtTime(freq, audio.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.0001, audio.currentTime + dur);
+            osc.connect(gain); gain.connect(audio.destination);
+            osc.start(); osc.stop(audio.currentTime + dur);
         }
 
-        function login(data) {
-            currentUser = data;
-            document.querySelectorAll('.overlay').forEach(m => m.style.display = 'none');
-            document.getElementById('menu').style.display = 'flex';
-            updateUI();
-        }
-
-        function triggerDeath() {
-            gameActive = false;
-            shakeAmount = 15; // Start shake effect
-            setTimeout(() => toggleMenu('deathMenu', true), 500);
-        }
-
-        // --- REVIVE SYSTEM ---
-        function showReviveMenu() {
-            toggleMenu('reviveMenu', true);
-            document.getElementById('adBox').style.display = 'none';
-            document.getElementById('reviveButtons').style.display = 'block';
-        }
-
-        function startDummyAd() {
-            document.getElementById('reviveButtons').style.display = 'none';
-            document.getElementById('adBox').style.display = 'block';
-            let time = 15;
-            const timer = setInterval(() => {
-                time--;
-                document.getElementById('adTimer').innerText = time;
-                if(time <= 0) {
-                    clearInterval(timer);
-                    reviveSuccess();
-                }
-            }, 1000);
-        }
-
-        function payRevive() {
-            if(currentUser.isAdmin || currentUser.coins >= 100) {
-                if(!currentUser.isAdmin) currentUser.coins -= 100;
-                reviveSuccess();
-            } else alert("Not enough coins!");
-        }
-
-        function reviveSuccess() {
-            alert("Revived!");
-            startGame();
-        }
-
-        // --- SHOP & ABILITIES ---
-        function renderShop() {
-            const list = document.getElementById('skinList'); list.innerHTML = '';
-            skins.forEach(s => {
-                const owned = currentUser.owned.includes(s.id);
-                list.innerHTML += `<div class="skin-card ${currentUser.sel==s.id?'selected':''}" onclick="previewSkin(${s.id})">
-                    <div style="width:20px;height:20px;background:${s.color};margin:auto"></div>
-                    ${owned ? 'SELECT' : s.price+'C'}</div>`;
-            });
-            document.getElementById('shopCoinDisplay').innerText = "Coins: " + currentUser.coins;
-        }
-
-        function previewSkin(id) {
-            const s = skins[id];
-            document.getElementById('abilityPreview').innerHTML = `<b>${s.name}</b><br>Ability: ${s.ability}<br><small>${s.desc}</small>`;
-            if (currentUser.owned.includes(id)) { currentUser.sel = id; } 
-            else if (currentUser.isAdmin || currentUser.coins >= s.price) {
-                if(!currentUser.isAdmin) currentUser.coins -= s.price;
-                currentUser.owned.push(id); currentUser.sel = id;
-            }
-            renderShop(); updateUI();
-        }
-
+        // --- CORE GAME LOOP ---
         function startGame() {
             document.querySelectorAll('.overlay').forEach(m => m.style.display = 'none');
-            gameActive = true; loop();
+            gameActive = true; player.x = canvas.width/2; player.y = canvas.height-100;
+            playTone(400, 'square', 0.2);
+            loop();
         }
 
         function loop() {
             if (!gameActive) return;
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
             
-            // Apply Screen Shake via translate
-            ctx.setTransform(1, 0, 0, 1, 0, 0); 
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            if (shakeAmount > 0) {
-                ctx.translate(Math.random()*shakeAmount - shakeAmount/2, Math.random()*shakeAmount - shakeAmount/2);
-                shakeAmount *= 0.9;
-            }
+            // --- 1. TRAILS EFFECT ---
+            // Instead of clearing the whole screen, we draw a semi-transparent black rectangle
+            // This leaves a natural "motion blur" trail behind moving objects
+            ctx.fillStyle = "rgba(0, 0, 0, 0.2)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+            // --- 2. PLAYER & SHADOWS ---
+            // Adding "ShadowBlur" creates that glowing neon look
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = skins[currentUser.sel].color;
             ctx.fillStyle = skins[currentUser.sel].color;
-            ctx.fillRect(player.x, player.y, 30, 30);
             
-            // Dummy logic to test death
-            if(player.x > canvas.width) triggerDeath();
+            // Update movement
+            player.x += player.vx;
             
+            // Draw Player
+            ctx.fillRect(player.x, player.y, player.size, player.size);
+            ctx.shadowBlur = 0; // Reset blur for other elements
+
+            if (player.x < 0 || player.x > canvas.width) triggerDeath();
             requestAnimationFrame(loop);
         }
+
+        function triggerDeath() {
+            gameActive = false;
+            playTone(100, 'sawtooth', 0.5);
+            document.getElementById('deathMenu').style.display = 'flex';
+            updateLeaderboard();
+        }
+
+        // --- LEADERBOARD & UI ---
+        function updateLeaderboard() {
+            const bots = [{n: "VoidBot", s: 1200}, {n: "GlitchKing", s: 800}, {n: "NeonUser", s: 500}];
+            bots.push({n: "YOU", s: currentUser.high});
+            bots.sort((a,b) => b.s - a.s);
+            let html = "<h3>LOCAL TOP 5</h3>";
+            bots.slice(0,5).forEach((b, i) => html += `<div>${i+1}. ${b.n}: ${b.s}</div>`);
+            document.getElementById('lb').innerHTML = html;
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if(e.code === 'KeyD') player.vx = 8;
+            if(e.code === 'KeyA') player.vx = -8;
+            if(e.code === 'ShiftLeft') { player.vx *= 3; playTone(600, 'sine', 0.1); }
+        });
+        window.addEventListener('keyup', (e) => { player.vx = 0; });
 
         function toggleMenu(id, show) {
             document.querySelectorAll('.overlay').forEach(m => m.style.display = 'none');
             document.getElementById(id).style.display = show ? 'flex' : 'none';
-            if(id === 'shopMenu') renderShop();
+            if(id === 'menu') updateLeaderboard();
         }
 
-        function updateUI() {
-            document.getElementById('ui-coins').innerText = currentUser.coins;
-            document.getElementById('ui-best').innerText = currentUser.high;
-            document.getElementById('ui-id').innerText = currentUser.name;
-        }
-
-        window.addEventListener('keydown', (e) => {
-            if(e.code === 'KeyD') player.x += 10; // Simple movement test
-            if(e.code === 'KeyA') player.x -= 10;
-        });
+        updateLeaderboard();
     </script>
 </body>
 </html>
