@@ -6,52 +6,52 @@
     <style>
         body { margin: 0; background: #050505; color: white; font-family: monospace; overflow: hidden; text-align: center; }
         canvas { background: #000; display: block; margin: 0 auto; border-bottom: 3px solid #333; }
-        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.96); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 100; }
+        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.96); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 100; }
         h1 { font-size: 50px; color: #00ffcc; text-shadow: 0 0 10px #00ffcc; margin: 10px; }
         .studio-text { color: #ff00ff; letter-spacing: 3px; font-size: 14px; margin-bottom: 20px; }
-        .instr { font-size: 12px; color: #888; margin-bottom: 10px; }
         input { background: #111; border: 2px solid #ff00ff; color: white; padding: 15px; font-size: 20px; margin: 10px; text-align: center; outline: none; width: 250px; }
         button { background: transparent; color: #00ffcc; border: 2px solid #00ffcc; padding: 12px 30px; font-size: 18px; cursor: pointer; margin: 10px; transition: 0.2s; }
         button:hover { background: #00ffcc; color: black; }
         #ui { position: absolute; top: 15px; left: 15px; text-align: left; font-size: 16px; color: #00ffcc; pointer-events: none; z-index: 10; }
         .shop-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin: 15px; max-height: 300px; overflow-y: auto; padding: 10px; width: 450px; }
         .skin-card { border: 1px solid #444; padding: 8px; cursor: pointer; background: #111; font-size: 10px; }
-        #watermark { position: absolute; bottom: 10px; right: 10px; font-size: 12px; color: rgba(255,255,255,0.3); pointer-events: none; }
+        #watermark { position: absolute; bottom: 15px; right: 20px; font-size: 14px; color: #ff00ff; z-index: 200; font-weight: bold; text-shadow: 0 0 5px #ff00ff; }
     </style>
 </head>
 <body>
-    <div id="watermark">MADE BY GLITCHBOUNDSTUDIOS</div>
+    <!-- WATERMARK FIXED -->
+    <div id="watermark">GLITCHBOUNDSTUDIOS</div>
     
     <div id="ui">
         ID: <span id="ui-id">?</span><br>
         COINS: <span id="ui-coins" style="color:#ffd700">0</span>
     </div>
 
-    <!-- LOGIN / SIGN UP PAGE -->
-    <div id="nameMenu" class="overlay" style="display:flex">
+    <!-- IDENTITY SYNC (LOGIN) -->
+    <div id="nameMenu" class="overlay">
         <div class="studio-text">GLITCH BOUND STUDIOS</div>
         <h1>IDENTITY SYNC</h1>
-        <p class="instr">NEW? Enter a name/pass to CREATE account.<br>RETURNING? Enter your details to LOG IN.</p>
-        <input type="text" id="uIn" placeholder="USERNAME">
-        <input type="password" id="pIn" placeholder="PASSWORD">
-        <button onclick="auth()">SYNC VOID</button>
+        <p style="font-size: 12px; color: #888;">Type any Handle/Keycode to join.</p>
+        <input type="text" id="uIn" placeholder="HANDLE">
+        <input type="password" id="pIn" placeholder="KEYCODE">
+        <button onclick="handleLogin()">SYNC VOID</button>
     </div>
 
     <!-- MAIN MENU -->
-    <div id="mainMenu" class="overlay">
-        <div class="studio-text">GLITCH BOUND STUDIOS</div>
+    <div id="mainMenu" class="overlay" style="display:none">
+        <div class="studio-text">ACCESS GRANTED</div>
         <h1>VOID JUMP</h1>
         <button onclick="start()">START RUN</button>
-        <button onclick="showShop(true)">THE VAULT</button>
+        <button onclick="toggleShop(true)">THE VAULT</button>
         <button onclick="location.reload()">LOGOUT</button>
     </div>
 
     <!-- SHOP -->
-    <div id="shopMenu" class="overlay">
+    <div id="shopMenu" class="overlay" style="display:none">
         <h1>THE VAULT</h1>
         <div id="vCoins" style="color:#ffd700; margin-bottom:10px;">Coins: 0</div>
         <div class="shop-grid" id="skinList"></div>
-        <button onclick="showShop(false)">BACK</button>
+        <button onclick="toggleShop(false)">BACK</button>
     </div>
 
     <canvas id="game"></canvas>
@@ -65,44 +65,47 @@
         let player = { x: canvas.width/2, y: canvas.height - 120 };
         let obstacles = [], vCoins = [];
 
-        // Generate 50 Skins
+        // 50 Skins
         let skins = [];
-        for(let i=0; i<50; i++) skins.push({id: i, color: `hsl(${i*55}, 70%, 50%)`, price: i*20});
+        for(let i=0; i<50; i++) skins.push({id: i, color: `hsl(${i*45}, 70%, 50%)`, price: i*25});
 
-        function auth() {
+        function handleLogin() {
             const u = document.getElementById('uIn').value.trim();
             const p = document.getElementById('pIn').value.trim();
             if(!u || !p) return;
 
-            let db = JSON.parse(localStorage.getItem('gb_data')) || {};
-            
-            // ADMIN ACCESS
-            if(u === "glitchboundstudio" && p === "glitchboundstudio") {
-                user = { name: "Admin", coins: 99999, owned: skins.map(s=>s.id), sel: 1, high: 999 };
-            } else if(db[u]) {
-                if(db[u].pass === p) user = db[u]; else { alert("WRONG PASS"); return; }
+            // ADMIN ACCOUNT CHECK
+            if(u.toLowerCase() === "glitchboundstudio" && p.toLowerCase() === "glitchboundstudio") {
+                user = { name: "Admin", coins: 999999, owned: skins.map(s=>s.id), sel: 1 };
             } else {
-                user = { name: u, pass: p, coins: 0, owned:, sel: 0, high: 0 };
-                db[u] = user;
-                localStorage.setItem('gb_data', JSON.stringify(db));
+                // LOAD OR CREATE ACCOUNT
+                let storage = JSON.parse(localStorage.getItem('gb_accounts')) || {};
+                if(storage[u]) {
+                    if(storage[u].pass === p) user = storage[u];
+                    else { alert("INVALID KEYCODE"); return; }
+                } else {
+                    user = { name: u, pass: p, coins: 0, owned:, sel: 0 };
+                    storage[u] = user;
+                    localStorage.setItem('gb_accounts', JSON.stringify(storage));
+                }
             }
-
+            
             document.getElementById('nameMenu').style.display = 'none';
             document.getElementById('mainMenu').style.display = 'flex';
             document.getElementById('ui-id').innerText = user.name.toUpperCase();
             updateUI();
         }
 
-        function showShop(val) {
-            document.getElementById('mainMenu').style.display = val ? 'none' : 'flex';
-            document.getElementById('shopMenu').style.display = val ? 'flex' : 'none';
-            if(val) {
+        function toggleShop(show) {
+            document.getElementById('mainMenu').style.display = show ? 'none' : 'flex';
+            document.getElementById('shopMenu').style.display = show ? 'flex' : 'none';
+            if(show) {
                 const list = document.getElementById('skinList'); list.innerHTML = '';
                 skins.forEach(s => {
-                    const isOwned = user.owned.includes(s.id);
+                    const owned = user.owned.includes(s.id);
                     list.innerHTML += `<div class="skin-card" onclick="buy(${s.id})" style="border-color:${user.sel==s.id?'#00ffcc':'#444'}">
-                        <div style="width:20px;height:20px;background:${s.color};margin:auto;"></div>
-                        ${isOwned ? 'EQUIP' : s.price+'C'}</div>`;
+                        <div style="width:25px;height:25px;background:${s.color};margin:auto;"></div>
+                        ${owned ? 'EQUIP' : s.price+'C'}</div>`;
                 });
                 document.getElementById('vCoins').innerText = "Coins: " + user.coins;
             }
@@ -113,14 +116,14 @@
             else if(user.coins >= skins[id].price) {
                 user.coins -= skins[id].price; user.owned.push(id); user.sel = id;
             }
-            save(); showShop(true); updateUI();
+            saveData(); toggleShop(true); updateUI();
         }
 
-        function save() {
+        function saveData() {
             if(user.name === "Admin") return;
-            let db = JSON.parse(localStorage.getItem('gb_data'));
-            db[user.name] = user;
-            localStorage.setItem('gb_data', JSON.stringify(db));
+            let storage = JSON.parse(localStorage.getItem('gb_accounts'));
+            storage[user.name] = user;
+            localStorage.setItem('gb_accounts', JSON.stringify(storage));
         }
 
         function updateUI() { document.getElementById('ui-coins').innerText = user.coins; }
@@ -144,24 +147,20 @@
             particles.push({x: player.x, y: player.y+15, l: 1.0});
             particles.forEach((p, i) => {
                 p.l -= 0.05; ctx.globalAlpha = p.l; ctx.fillStyle = skins[user.sel].color;
-                ctx.fillRect(p.x-2, p.y, 4, 4);
-                if(p.l <= 0) particles.splice(i,1);
+                ctx.fillRect(p.x-2, p.y, 4, 4); if(p.l <= 0) particles.splice(i,1);
             });
             ctx.globalAlpha = 1;
 
             vCoins.forEach((c, i) => {
                 c.y += 4; ctx.fillStyle = "gold"; ctx.beginPath(); ctx.arc(c.x, c.y, 8, 0, Math.PI*2); ctx.fill();
-                if(Math.hypot(player.x-c.x, player.y-c.y) < 30) { vCoins.splice(i, 1); user.coins += 2; updateUI(); save(); }
+                if(Math.hypot(player.x-c.x, player.y-c.y) < 30) { vCoins.splice(i, 1); user.coins += 2; updateUI(); saveData(); }
             });
 
             obstacles.forEach((o, i) => {
                 o.y += o.s; ctx.fillStyle = "white"; ctx.fillRect(o.x-15, o.y, 30, 30);
                 if(o.y > player.y-15 && Math.abs(o.x - player.x) < 25) {
-                    active = false;
-                    if(confirm("REVIVE FOR 50 COINS?")) {
-                        if(user.coins >= 50) { user.coins -= 50; active = true; loop(); updateUI(); save(); }
-                        else { document.getElementById('mainMenu').style.display = 'flex'; }
-                    } else { document.getElementById('mainMenu').style.display = 'flex'; }
+                    active = false; alert("VOID CRASHED | Score: " + score);
+                    document.getElementById('mainMenu').style.display = 'flex';
                 }
                 if(o.y > canvas.height) { obstacles.splice(i, 1); score++; }
             });
@@ -173,3 +172,5 @@
     </script>
 </body>
 </html>
+
+
