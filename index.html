@@ -4,9 +4,10 @@
     <meta charset="UTF-8">
     <title>Void Jump | Glitch Bound Studios</title>
     <style>
-        body { margin: 0; background: #000; color: white; font-family: monospace; overflow: hidden; text-align: center; }
-        canvas { display: block; }
+        body { margin: 0; background: #050505; color: white; font-family: monospace; overflow: hidden; text-align: center; }
+        canvas { display: block; position: absolute; top: 0; left: 0; z-index: 1; }
         
+        /* Layered Blocking Fix */
         .overlay { 
             position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
             background: rgba(0,0,0,0.95); display: none; flex-direction: column; 
@@ -15,50 +16,61 @@
         
         .gb-btn { 
             width: 250px; height: 60px; background: #111; color: #00ffcc; 
-            border: 3px solid #00ffcc; font-size: 20px; font-weight: bold; 
+            border: 3px solid #00ffcc; font-size: 18px; font-weight: bold; 
             cursor: pointer; margin: 10px; border-radius: 8px; text-transform: uppercase;
+            pointer-events: auto !important; /* Forces button to work */
         }
         .gb-btn:hover { background: #00ffcc; color: #000; box-shadow: 0 0 20px #00ffcc; }
 
-        input { background: #111; border: 2px solid #ff00ff; color: #00ffcc; padding: 15px; font-size: 20px; text-align: center; margin-bottom: 10px; outline: none; }
+        input { background: #111; border: 2px solid #ff00ff; color: #00ffcc; padding: 15px; font-size: 20px; text-align: center; margin-bottom: 10px; outline: none; pointer-events: auto; }
         
-        #ui { position: absolute; top: 15px; left: 15px; text-align: left; font-size: 18px; color: #00ffcc; pointer-events: none; z-index: 500; font-weight: bold; }
-        #pauseBtn { position: absolute; top: 15px; right: 15px; font-size: 30px; color: #00ffcc; cursor: pointer; z-index: 2000; display: none; }
+        #ui { position: absolute; top: 15px; left: 15px; text-align: left; font-size: 16px; color: #00ffcc; pointer-events: none; z-index: 500; font-weight: bold; }
         #watermark { position: absolute; bottom: 15px; right: 20px; font-size: 14px; color: #ff00ff; font-weight: bold; pointer-events: none; z-index: 2000; }
+        
+        .shop-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin: 15px; max-height: 250px; overflow-y: auto; padding: 10px; width: 450px; border: 1px solid #ffd700; }
+        .skin-card { border: 1px solid #444; padding: 5px; cursor: pointer; background: #111; font-size: 9px; pointer-events: auto; }
+        
+        #abilityBar { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); width: 200px; height: 8px; background: #222; border: 1px solid #00ffcc; z-index: 500; }
+        #abilityFill { width: 100%; height: 100%; background: #00ffcc; transition: 0.1s; }
     </style>
 </head>
 <body>
     <div id="watermark">GLITCHBOUNDSTUDIOS</div>
     <div id="ui">ID: <span id="ui-id">?</span> | BEST: <span id="ui-best">0</span><br>COINS: <span id="ui-coins" style="color:#ffd700">0</span></div>
-    <div id="pauseBtn" onmousedown="togglePause()">II</div>
+    
+    <div id="abilityBar"><div id="abilityFill"></div></div>
 
-    <!-- MENUS -->
+    <!-- MAIN MENU -->
     <div id="menu" class="overlay" style="display:flex">
-        <h1 style="color:#00ffcc; font-size:55px; margin:10px; text-shadow: 0 0 15px #00ffcc;">VOID JUMP</h1>
+        <h1 style="color:#00ffcc; font-size:50px; margin:5px;">VOID JUMP</h1>
         <input type="text" id="nameIn" placeholder="HANDLE" maxlength="10">
-        <button class="gb-btn" style="background:#00ffcc; color:#000;" onmousedown="start()">START RUN</button>
-        <button class="gb-btn" style="color:#ffd700; border-color:#ffd700;" onmousedown="openMenu('shopMenu')">SHOP</button>
+        <button class="gb-btn" style="background:#00ffcc; color:#000;" onclick="start()">START RUN</button>
+        <button class="gb-btn" style="color:#ffd700; border-color:#ffd700;" onclick="openMenu('shopMenu')">SHOP</button>
+        <button class="gb-btn" style="color:#ff00ff; border-color:#ff00ff;" onclick="openMenu('settingsMenu')">SETTINGS</button>
     </div>
 
+    <!-- PAUSE MENU -->
     <div id="pauseMenu" class="overlay">
-        <h1 style="color:#00ffcc">PAUSED</h1>
-        <p id="pauseName" style="color:#ff00ff; font-size: 20px;"></p>
-        <button class="gb-btn" onmousedown="togglePause()">RESUME</button>
-        <button class="gb-btn" onmousedown="location.reload()">QUIT TO MENU</button>
+        <h1>PAUSED</h1>
+        <button class="gb-btn" onclick="togglePause()">RESUME</button>
+        <button class="gb-btn" onclick="location.reload()">QUIT TO MENU</button>
     </div>
 
-    <div id="deathMenu" class="overlay">
-        <h1 style="color:red">VOID CRASHED</h1>
-        <p id="deathScore" style="font-size: 24px; color: white;"></p>
-        <button class="gb-btn" onmousedown="start()">RETRY</button>
-        <button class="gb-btn" onmousedown="openMenu('menu')">MENU</button>
+    <!-- SETTINGS -->
+    <div id="settingsMenu" class="overlay">
+        <h1>SETTINGS</h1>
+        <div style="margin:5px">LEFT: <button class="gb-btn" style="width:100px; height:40px;" id="keyL" onclick="remap('left')">A</button></div>
+        <div style="margin:5px">RIGHT: <button class="gb-btn" style="width:100px; height:40px;" id="keyR" onclick="remap('right')">D</button></div>
+        <div style="margin:5px">ABILITY: <button class="gb-btn" style="width:100px; height:40px;" id="keyA" onclick="remap('ability')">G</button></div>
+        <button class="gb-btn" onclick="openMenu('menu')">BACK</button>
     </div>
 
+    <!-- SHOP -->
     <div id="shopMenu" class="overlay">
         <h1 style="color:#ffd700">THE VAULT</h1>
-        <div id="vCoins" style="color:#ffd700; font-size:20px; margin-bottom:10px;">Coins: 0</div>
-        <div id="skinList" style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin-bottom:20px;"></div>
-        <button class="gb-btn" onmousedown="openMenu('menu')">BACK</button>
+        <div id="vCoins" style="color:#ffd700; margin-bottom:10px;">Coins: 0</div>
+        <div class="shop-grid" id="skinList"></div>
+        <button class="gb-btn" onclick="openMenu('menu')">BACK</button>
     </div>
 
     <canvas id="game"></canvas>
@@ -66,52 +78,55 @@
     <script>
         const canvas = document.getElementById('game');
         const ctx = canvas.getContext('2d');
-        
-        function resize() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        }
+        function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
         window.onresize = resize; resize();
 
-        let active = false, paused = false, score = 0, frame = 0;
+        let active = false, paused = false, score = 0, frame = 0, cooldown = 0, hasShield = false;
         let coins = parseInt(localStorage.getItem('gb_c')) || 0;
         let high = parseInt(localStorage.getItem('gb_h')) || 0;
-        let owned = JSON.parse(localStorage.getItem('gb_s')) ||;
+        let owned = JSON.parse(localStorage.getItem('gb_s')) || [0];
         let sel = parseInt(localStorage.getItem('gb_sel')) || 0;
-        let keys = {};
         let handle = "PLAYER";
+        
+        let binds = { left: 'KeyA', right: 'KeyD', ability: 'KeyG', lLab: 'A', rLab: 'D', aLab: 'G' };
+        let remapTarget = null;
+        let keys = {};
 
+        const skinPowers = ["Dash", "Magnet", "SlowMo", "Shield", "Double"];
         let skins = [];
         const colors = ['#00ffcc','#ff00ff','#ffd700','#ff4400','#22ff22','#ffffff','#9900ff','#0099ff','#ff1493','#7fff00'];
-        for(let i=0; i<50; i++) skins.push({id: i, color: colors[i%10], price: i*50});
+        for(let i=0; i<50; i++) skins.push({id: i, color: colors[i%10], price: i*40, power: skinPowers[i % 5]});
 
-        window.onkeydown = e => { 
+        window.onkeydown = e => {
+            if(remapTarget) {
+                binds[remapTarget] = e.code;
+                binds[remapTarget.charAt(0) + 'Lab'] = e.key.toUpperCase();
+                document.getElementById('key' + remapTarget.charAt(0).toUpperCase()).innerText = e.key.toUpperCase();
+                remapTarget = null; return;
+            }
             keys[e.code] = true;
             if(e.code === 'KeyP') togglePause();
+            if(e.code === binds.ability && cooldown <= 0 && active && !paused) useAbility();
         };
         window.onkeyup = e => keys[e.code] = false;
+
+        function remap(t) { remapTarget = t; document.getElementById('key' + t.charAt(0).toUpperCase()).innerText = '...'; }
 
         function openMenu(id) {
             document.querySelectorAll('.overlay').forEach(o => o.style.display = 'none');
             if(id !== 'none') document.getElementById(id).style.display = 'flex';
-            document.getElementById('pauseBtn').style.display = (id === 'none') ? 'block' : 'none';
             if(id === 'shopMenu') renderShop();
         }
 
-        function togglePause() {
-            if(!active) return;
-            paused = !paused;
-            document.getElementById('pauseMenu').style.display = paused ? 'flex' : 'none';
-            document.getElementById('pauseName').innerText = "RUNNING AS: " + handle;
-        }
+        function togglePause() { if(!active) return; paused = !paused; document.getElementById('pauseMenu').style.display = paused ? 'flex' : 'none'; }
 
         function renderShop() {
             const list = document.getElementById('skinList'); list.innerHTML = '';
             skins.forEach(s => {
                 const isOwned = owned.includes(s.id);
-                list.innerHTML += `<div onclick="buy(${s.id})" style="border:1px solid ${sel==s.id?'#ffd700':'#444'}; padding:5px; background:#111; cursor:pointer; width:60px;">
+                list.innerHTML += `<div class="skin-card" onclick="buy(${s.id})" style="border-color:${sel==s.id?'#ffd700':'#444'}">
                     <div style="width:20px;height:20px;background:${s.color};margin:auto;border-radius:${s.id > 25 ? '50%' : '0'}"></div>
-                    ${isOwned ? 'OWN' : s.price+'C'}</div>`;
+                    ${isOwned ? 'EQUIP' : s.price+'C'}<br><span style="color:#ff00ff">${s.power}</span></div>`;
             });
             document.getElementById('vCoins').innerText = "Coins: " + coins;
         }
@@ -132,49 +147,51 @@
         let player = { x: canvas.width/2, y: canvas.height - 150 };
         let obstacles = [];
 
+        function useAbility() {
+            const p = skins[sel].power;
+            if(p === "Dash") player.x += keys[binds.left] ? -250 : 250;
+            if(p === "Shield") hasShield = true;
+            if(p === "SlowMo") obstacles.forEach(o => o.s /= 2);
+            cooldown = 100;
+        }
+
         function start() {
             handle = document.getElementById('nameIn').value || "PLAYER";
             if(handle === "GlitchBoundStudio") { coins = 999999; owned = skins.map(s=>s.id); }
             openMenu('none');
-            active = true; paused = false; score = 0; frame = 0; obstacles = []; 
+            active = true; paused = false; score = 0; frame = 0; cooldown = 0; obstacles = []; hasShield = false;
             updateUI(); loop();
         }
 
         function loop() {
             if(!active) return;
             if(!paused) {
-                // TRAIL EFFECT: We don't fully clear the screen, we draw a semi-transparent black over it
-                ctx.fillStyle = "rgba(0, 0, 0, 0.2)";
+                ctx.fillStyle = "rgba(0, 0, 0, 0.2)"; // TRAIL EFFECT
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-                if(keys['KeyA'] || keys['ArrowLeft']) player.x -= 10;
-                if(keys['KeyD'] || keys['ArrowRight']) player.x += 10;
+                if(keys[binds.left]) player.x -= 10;
+                if(keys[binds.right]) player.x += 10;
                 player.x = Math.max(20, Math.min(canvas.width-20, player.x));
 
-                if(frame % 20 === 0) obstacles.push({x: Math.random()*canvas.width, y: -50, s: 7+(score/12)});
+                if(frame % 20 === 0) obstacles.push({x: Math.random()*canvas.width, y: -50, s: 7+(score/15)});
 
                 obstacles.forEach((o, i) => {
                     o.y += o.s;
-                    // SHADOW/GLOW
-                    ctx.shadowBlur = 10; ctx.shadowColor = "white";
-                    ctx.fillStyle = "white";
-                    ctx.fillRect(o.x-15, o.y, 30, 30);
-                    
+                    ctx.fillStyle = "white"; ctx.fillRect(o.x-15, o.y, 30, 30);
                     if(o.y > player.y-15 && Math.abs(o.x - player.x) < 25) {
-                        active = false; if(score > high) { high = score; localStorage.setItem('gb_h', high); }
-                        document.getElementById('deathScore').innerText = "SCORE: " + score;
-                        openMenu('deathMenu');
+                        if(hasShield) { hasShield = false; obstacles.splice(i, 1); }
+                        else { active = false; if(score > high) high = score; localStorage.setItem('gb_h', high); location.reload(); }
                     }
-                    if(o.y > canvas.height) { obstacles.splice(i, 1); score++; if(score%5==0){coins+=2; updateUI();} }
+                    if(o.y > canvas.height) { obstacles.splice(i, 1); score++; if(score%5==0){coins+=(skins[sel].power=="Double"?4:2); updateUI();} }
                 });
 
-                // PLAYER GLOW
-                ctx.shadowBlur = 15; ctx.shadowColor = skins[sel].color;
+                if(cooldown > 0) cooldown--;
+                document.getElementById('abilityFill').style.width = (100 - cooldown) + '%';
+                
+                if(hasShield) { ctx.strokeStyle = '#00ffcc'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(player.x, player.y, 25, 0, Math.PI*2); ctx.stroke(); }
                 ctx.fillStyle = skins[sel].color;
                 if(skins[sel].id > 25) { ctx.beginPath(); ctx.arc(player.x, player.y, 15, 0, Math.PI*2); ctx.fill(); }
                 else { ctx.fillRect(player.x-15, player.y, 30, 30); }
-                
-                ctx.shadowBlur = 0; // Reset blur
                 frame++;
             }
             requestAnimationFrame(loop);
@@ -183,4 +200,5 @@
     </script>
 </body>
 </html>
+
 
