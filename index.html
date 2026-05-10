@@ -4,8 +4,8 @@
     <title>Out of Sight</title>
     <style>
         body { margin: 0; overflow: hidden; background: black; color: white; font-family: sans-serif; }
-        #instructions { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; }
-        #crosshair { position: absolute; top: 50%; left: 50%; width: 10px; height: 10px; border: 1px solid white; border-radius: 50%; }
+        #instructions { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; z-index: 10; }
+        #crosshair { position: absolute; top: 50%; left: 50%; width: 10px; height: 10px; border: 1px solid white; border-radius: 50%; pointer-events: none; }
         #inventory { position: absolute; bottom: 20px; left: 20px; font-size: 20px; }
     </style>
 </head>
@@ -18,14 +18,18 @@
     <div id="crosshair"></div>
     <div id="inventory">Inventory: Empty</div>
 
-    <!-- Import Three.js -->
     <script type="importmap">
-      { "imports": { "three": "https://unpkg.com" } }
+      {
+        "imports": {
+          "three": "https://unpkg.com",
+          "three/addons/": "https://unpkg.com"
+        }
+      }
     </script>
 
     <script type="module">
         import * as THREE from 'three';
-        import { PointerLockControls } from 'https://unpkg.com';
+        import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
 
         let scene, camera, renderer, controls, playerHeight = 1.6;
         let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false;
@@ -33,23 +37,27 @@
         let velocity = new THREE.Vector3();
         let direction = new THREE.Vector3();
         let hasKey = false;
-
-        // Game Objects
         let chaser, keyObj, exitDoor;
+        const walls = [];
 
         init();
         animate();
 
         function init() {
             scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x050505);
-            scene.fog = new THREE.Fog(0x050505, 0, 20); // Fog creates horror vibe
+            scene.background = new THREE.Color(0x020202);
+            scene.fog = new THREE.Fog(0x020202, 0, 15);
 
             camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.y = playerHeight;
+            camera.position.set(0, playerHeight, 0);
 
-            const light = new THREE.PointLight(0xffffff, 10, 10);
-            camera.add(light); // Camera acts as a flashlight
+            const flashlight = new THREE.SpotLight(0xffffff, 20);
+            flashlight.angle = Math.PI / 6;
+            flashlight.penumbra = 0.5;
+            camera.add(flashlight);
+            flashlight.position.set(0, 0, 0);
+            flashlight.target.position.set(0, 0, -1);
+            camera.add(flashlight.target);
             scene.add(camera);
 
             renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -58,55 +66,63 @@
 
             controls = new PointerLockControls(camera, document.body);
             document.getElementById('instructions').addEventListener('click', () => controls.lock());
-            controls.addEventListener('lock', () => document.getElementById('instructions').style.display = 'none');
-            controls.addEventListener('unlock', () => document.getElementById('instructions').style.display = 'block');
 
-            // Movement Events
-            const onKeyDown = (event) => {
-                switch (event.code) {
-                    case 'KeyW': moveForward = true; break;
-                    case 'KeyA': moveLeft = true; break;
-                    case 'KeyS': moveBackward = true; break;
-                    case 'KeyD': moveRight = true; break;
-                }
+            const onKeyDown = (e) => {
+                if (e.code === 'KeyW') moveForward = true;
+                if (e.code === 'KeyA') moveLeft = true;
+                if (e.code === 'KeyS') moveBackward = true;
+                if (e.code === 'KeyD') moveRight = true;
             };
-            const onKeyUp = (event) => {
-                switch (event.code) {
-                    case 'KeyW': moveForward = false; break;
-                    case 'KeyA': moveLeft = false; break;
-                    case 'KeyS': moveBackward = false; break;
-                    case 'KeyD': moveRight = false; break;
-                }
+            const onKeyUp = (e) => {
+                if (e.code === 'KeyW') moveForward = false;
+                if (e.code === 'KeyA') moveLeft = false;
+                if (e.code === 'KeyS') moveBackward = false;
+                if (e.code === 'KeyD') moveRight = false;
             };
             document.addEventListener('keydown', onKeyDown);
             document.addEventListener('keyup', onKeyUp);
 
-            // Floor & Walls (The House)
-            const floorGeo = new THREE.PlaneGeometry(40, 40);
-            const floorMat = new THREE.MeshPhongMaterial({ color: 0x222222 });
-            const floor = new THREE.Mesh(floorGeo, floorMat);
+            // Textures
+            const loader = new THREE.TextureLoader();
+            const wallTex = loader.load('wall.png');
+            const floorTex = loader.load('floor.png');
+            floorTex.wrapS = floorTex.wrapT = THREE.RepeatWrapping;
+            floorTex.repeat.set(10, 10);
+
+            // Floor
+            const floor = new THREE.Mesh(new THREE.PlaneGeometry(40, 40), new THREE.MeshPhongMaterial({ map: floorTex }));
             floor.rotation.x = -Math.PI / 2;
             scene.add(floor);
 
-            // The Man (Antagonist) - Represented by a Tall Dark Cylinder
-            const manGeo = new THREE.CylinderGeometry(0.5, 0.5, 2, 8);
-            const manMat = new THREE.MeshPhongMaterial({ color: 0x111111 });
-            chaser = new THREE.Mesh(manGeo, manMat);
-            chaser.position.set(10, 1, 10);
+            // Wall Builder Function
+            function createWall(x, z, w, h, d) {
+                const wall = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshPhongMaterial({ map: wallTex }));
+                wall.position.set(x, h/2, z);
+                scene.add(wall);
+                walls.push(wall);
+            }
+
+            // Create a small house layout
+            createWall(0, -10, 20, 4, 1); // Back Wall
+            createWall(-10, 0, 1, 4, 20); // Left Wall
+            createWall(10, 0, 1, 4, 20);  // Right Wall
+            createWall(0, 10, 20, 4, 1);  // Front Wall
+            createWall(0, 0, 1, 4, 10);   // Center Divider
+
+            // THE MAN
+            const spriteMap = loader.load('man.png');
+            chaser = new THREE.Sprite(new THREE.SpriteMaterial({ map: spriteMap }));
+            chaser.scale.set(2, 3, 1); 
+            chaser.position.set(5, 1.5, -5);
             scene.add(chaser);
 
-            // The Key
-            const keyGeo = new THREE.BoxGeometry(0.2, 0.5, 0.1);
-            const keyMat = new THREE.MeshPhongMaterial({ color: 0xffff00 });
-            keyObj = new THREE.Mesh(keyGeo, keyMat);
-            keyObj.position.set(-5, 0.5, -8);
+            // Key & Door
+            keyObj = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.5), new THREE.MeshPhongMaterial({ color: 0xffff00 }));
+            keyObj.position.set(-8, 0.5, -8);
             scene.add(keyObj);
 
-            // The Exit Door
-            const doorGeo = new THREE.BoxGeometry(2, 3, 0.2);
-            const doorMat = new THREE.MeshPhongMaterial({ color: 0x442200 });
-            exitDoor = new THREE.Mesh(doorGeo, doorMat);
-            exitDoor.position.set(0, 1.5, -19);
+            exitDoor = new THREE.Mesh(new THREE.BoxGeometry(2, 3, 0.5), new THREE.MeshPhongMaterial({ color: 0x442200 }));
+            exitDoor.position.set(0, 1.5, 9.5);
             scene.add(exitDoor);
         }
 
@@ -116,7 +132,6 @@
             const delta = (time - prevTime) / 1000;
 
             if (controls.isLocked) {
-                // Movement logic
                 velocity.x -= velocity.x * 10.0 * delta;
                 velocity.z -= velocity.z * 10.0 * delta;
                 direction.z = Number(moveForward) - Number(moveBackward);
@@ -129,28 +144,25 @@
                 controls.moveRight(-velocity.x * delta);
                 controls.moveForward(-velocity.z * delta);
 
-                // AI Chaser logic
-                const enemySpeed = 1.8 * delta;
+                // Simple AI Chase
+                const enemySpeed = 1.5 * delta;
                 const dirToPlayer = new THREE.Vector3().subVectors(camera.position, chaser.position).normalize();
                 chaser.position.x += dirToPlayer.x * enemySpeed;
                 chaser.position.z += dirToPlayer.z * enemySpeed;
 
-                // Collision Check: Capture
                 if (camera.position.distanceTo(chaser.position) < 1.2) {
-                    alert("The Man caught you.");
+                    alert("He found you...");
                     location.reload();
                 }
 
-                // Collision Check: Key
                 if (!hasKey && camera.position.distanceTo(keyObj.position) < 1.5) {
                     hasKey = true;
                     scene.remove(keyObj);
                     document.getElementById('inventory').innerText = "Inventory: Master Key";
                 }
 
-                // Collision Check: Escape
                 if (hasKey && camera.position.distanceTo(exitDoor.position) < 2) {
-                    alert("You Escaped the Estate!");
+                    alert("Escaped!");
                     location.reload();
                 }
             }
@@ -160,3 +172,5 @@
     </script>
 </body>
 </html>
+
+
