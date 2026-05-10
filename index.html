@@ -5,13 +5,13 @@
     <title>Void Jump | Glitch Bound Studios</title>
     <style>
         body { margin: 0; background: #050505; color: white; font-family: monospace; overflow: hidden; text-align: center; }
-        canvas { display: block; position: absolute; top: 0; left: 0; z-index: 1; }
-        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.92); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 1000; }
+        canvas { display: block; background: #000; }
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 1000; }
         #menu, #shopMenu, #settingsMenu, #deathMenu { display: none; }
-        .gb-btn { width: 250px; height: 60px; background: #111; color: #00ffcc; border: 3px solid #00ffcc; font-size: 18px; font-weight: bold; cursor: pointer; margin: 10px; border-radius: 8px; text-transform: uppercase; pointer-events: auto !important; transition: 0.2s; }
+        .gb-btn { width: 250px; height: 60px; background: #111; color: #00ffcc; border: 3px solid #00ffcc; font-size: 18px; font-weight: bold; cursor: pointer; margin: 10px; border-radius: 8px; text-transform: uppercase; transition: 0.2s; }
         .gb-btn:hover { background: #00ffcc; color: #000; box-shadow: 0 0 20px #00ffcc; }
         input { background: #111; border: 2px solid #ff00ff; color: #00ffcc; padding: 15px; font-size: 20px; text-align: center; margin-bottom: 10px; outline: none; border-radius: 5px; }
-        #ui { position: absolute; top: 15px; left: 15px; text-align: left; font-size: 16px; color: #00ffcc; pointer-events: none; z-index: 500; font-weight: bold; line-height: 1.4; }
+        #ui { position: absolute; top: 15px; left: 15px; text-align: left; font-size: 16px; color: #00ffcc; pointer-events: none; z-index: 500; font-weight: bold; }
         #watermark { position: absolute; bottom: 15px; right: 20px; font-size: 14px; color: #ff00ff; font-weight: bold; pointer-events: none; z-index: 2000; }
         .shop-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin: 15px; max-height: 250px; overflow-y: auto; padding: 10px; width: 450px; border: 1px solid #ffd700; }
         .skin-card { border: 1px solid #444; padding: 5px; cursor: pointer; background: #111; font-size: 9px; }
@@ -48,8 +48,7 @@
 
     <div id="settingsMenu" class="overlay">
         <h1>SETTINGS</h1>
-        <div style="margin:5px">LEFT: <button class="gb-btn" style="width:100px; height:40px;" id="keyL" onclick="remap('left')">A</button></div>
-        <div style="margin:5px">RIGHT: <button class="gb-btn" style="width:100px; height:40px;" id="keyR" onclick="remap('right')">D</button></div>
+        <p>USE WASD TO MOVE | G FOR ABILITY</p>
         <button class="gb-btn" onclick="openMenu('menu')">BACK</button>
     </div>
 
@@ -61,7 +60,7 @@
         function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
         window.onresize = resize; resize();
 
-        let active = false, score = 0, frame = 0, cooldown = 0;
+        let active = false, score = 0, frame = 0, cooldown = 0, hasShield = false;
         let coins = parseInt(localStorage.getItem('gb_c')) || 0;
         let high = parseInt(localStorage.getItem('gb_h')) || 0;
         let owned = JSON.parse(localStorage.getItem('gb_s')) || [0];
@@ -69,20 +68,23 @@
         let handle = localStorage.getItem('gb_name') || "";
         document.getElementById('nameIn').value = handle;
 
-        let binds = { left: 'KeyA', right: 'KeyD' };
         let keys = {};
-        let obstacles = [], goldDrops = [], trail = [];
+        let obstacles = [], goldDrops = [], particles = [];
 
+        const skinPowers = ["Dash", "Magnet", "SlowMo", "Shield", "Double"];
         let skins = [];
         const colors = ['#00ffcc','#ff00ff','#ffd700','#ff4400','#22ff22','#ffffff','#9900ff','#0099ff','#ff1493','#7fff00'];
-        for(let i=0; i<50; i++) skins.push({id: i, color: colors[i%10], price: i*40});
+        for(let i=0; i<50; i++) skins.push({id: i, color: colors[i%10], price: i*40, power: skinPowers[i % 5]});
 
-        window.onkeydown = e => { keys[e.code] = true; if(e.code === 'KeyP') active = !active; };
+        window.onkeydown = e => { 
+            keys[e.code] = true; 
+            if(e.code === 'KeyG' && cooldown <= 0 && active) useAbility();
+        };
         window.onkeyup = e => keys[e.code] = false;
 
         function openMenu(id) {
             document.querySelectorAll('.overlay').forEach(o => o.style.display = 'none');
-            document.getElementById(id).style.display = 'flex';
+            if(id !== 'none') document.getElementById(id).style.display = 'flex';
             if(id === 'shopMenu') renderShop();
         }
 
@@ -92,7 +94,7 @@
                 const isOwned = owned.includes(s.id);
                 list.innerHTML += `<div class="skin-card" onclick="buy(${s.id})" style="border-color:${sel==s.id?'#ffd700':'#444'}">
                     <div style="width:20px;height:20px;background:${s.color};margin:auto;border-radius:${s.id > 25 ? '50%' : '0'}"></div>
-                    ${isOwned ? 'EQUIP' : s.price+'C'}</div>`;
+                    ${isOwned ? 'OWNED' : s.price+'C'}<br><span style="color:#ffd700">${s.power}</span></div>`;
             });
             document.getElementById('vCoins').innerText = "Coins: " + coins;
         }
@@ -101,6 +103,14 @@
             if(owned.includes(id)) { sel = id; }
             else if(coins >= skins[id].price) { coins -= skins[id].price; owned.push(id); sel = id; }
             saveData(); renderShop(); updateUI();
+        }
+
+        function useAbility() {
+            const p = skins[sel].power;
+            if(p === "Dash") player.x += keys['KeyA'] ? -250 : 250;
+            if(p === "Shield") hasShield = true;
+            if(p === "SlowMo") obstacles.forEach(o => o.s /= 2);
+            cooldown = 100;
         }
 
         function saveData() { 
@@ -122,66 +132,69 @@
         function start() {
             handle = document.getElementById('nameIn').value || "PLAYER";
             saveData(); openMenu('none');
-            active = true; score = 0; frame = 0; obstacles = []; goldDrops = []; trail = [];
+            active = true; score = 0; frame = 0; cooldown = 0; obstacles = []; goldDrops = []; hasShield = false;
             updateUI(); loop();
         }
 
         function loop() {
             if(!active) return;
-            // 1. TRAILS (Motion Blur)
-            ctx.fillStyle = "rgba(5, 5, 5, 0.2)";
+            // Background with Trail Effect
+            ctx.fillStyle = "rgba(5, 5, 5, 0.25)";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            if(keys[binds.left]) player.x -= 10;
-            if(keys[binds.right]) player.x += 10;
+            // Movement
+            if(keys['KeyA'] || keys['ArrowLeft']) player.x -= 10;
+            if(keys['KeyD'] || keys['ArrowRight']) player.x += 10;
             player.x = Math.max(20, Math.min(canvas.width-20, player.x));
 
-            // Record trail
-            trail.push({x: player.x, y: player.y});
-            if(trail.length > 10) trail.shift();
+            // Spawning
+            if(frame % 20 === 0) obstacles.push({x: Math.random()*canvas.width, y: -50, s: 7+(score/12)});
+            if(frame % 120 === 0) goldDrops.push({x: Math.random()*canvas.width, y: -50, s: 5});
 
-            // Draw trail
-            trail.forEach((t, i) => {
-                ctx.fillStyle = skins[sel].color;
-                ctx.globalAlpha = i / 10;
-                ctx.fillRect(t.x - 15, t.y, 30, 30);
-            });
-            ctx.globalAlpha = 1;
-
-            // 2. SPAWN LOGIC
-            if(frame % 25 === 0) obstacles.push({x: Math.random()*canvas.width, y: -50, s: 7+(score/15)});
-            if(frame % 100 === 0) goldDrops.push({x: Math.random()*canvas.width, y: -50, s: 5});
-
-            // 3. VISIBLE COINS
+            // Coins
             goldDrops.forEach((c, i) => {
                 c.y += c.s;
                 ctx.fillStyle = "#ffd700";
-                ctx.shadowBlur = 10; ctx.shadowColor = "yellow";
                 ctx.beginPath(); ctx.arc(c.x, c.y, 10, 0, Math.PI*2); ctx.fill();
-                ctx.shadowBlur = 0;
                 if(Math.hypot(player.x - c.x, player.y - c.y) < 30) {
-                    goldDrops.splice(i, 1); coins += 5; saveData(); updateUI();
+                    goldDrops.splice(i, 1); coins += (skins[sel].power === "Double" ? 10 : 5); updateUI(); saveData();
                 }
             });
 
-            // 4. OBSTACLES
+            // Obstacles
             obstacles.forEach((o, i) => {
-                o.y += o.s; ctx.fillStyle = "white"; ctx.fillRect(o.x-15, o.y, 30, 30);
+                o.y += o.s;
+                ctx.fillStyle = "white";
+                ctx.fillRect(o.x-15, o.y, 30, 30);
                 if(o.y > player.y-15 && Math.abs(o.x - player.x) < 25) {
-                    active = false; if(score > high) high = score; saveData();
-                    document.getElementById('deathScore').innerText = "SCORE: " + score;
-                    openMenu('deathMenu');
+                    if(hasShield) { hasShield = false; obstacles.splice(i, 1); }
+                    else {
+                        active = false; if(score > high) high = score; saveData();
+                        document.getElementById('deathScore').innerText = "SCORE: " + score;
+                        openMenu('deathMenu');
+                    }
                 }
                 if(o.y > canvas.height) { obstacles.splice(i, 1); score++; }
             });
 
+            // Ability Bar
+            if(cooldown > 0) cooldown--;
+            document.getElementById('abilityFill').style.width = (100 - cooldown) + '%';
+
+            // Shield Visual
+            if(hasShield) { ctx.strokeStyle = '#00ffcc'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(player.x, player.y, 25, 0, Math.PI*2); ctx.stroke(); }
+
+            // Player Render
             ctx.fillStyle = skins[sel].color;
-            ctx.fillRect(player.x-15, player.y, 30, 30);
-            frame++; requestAnimationFrame(loop);
+            ctx.shadowBlur = 15; ctx.shadowColor = skins[sel].color;
+            if(skins[sel].id > 25) { ctx.beginPath(); ctx.arc(player.x, player.y, 15, 0, Math.PI*2); ctx.fill(); }
+            else { ctx.fillRect(player.x-15, player.y, 30, 30); }
+            ctx.shadowBlur = 0;
+
+            frame++;
+            requestAnimationFrame(loop);
         }
         updateUI();
     </script>
 </body>
 </html>
-
-
