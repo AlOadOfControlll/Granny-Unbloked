@@ -5,20 +5,18 @@
     <title>Void Jump | Glitch Bound Studios</title>
     <style>
         body { margin: 0; background: #050505; color: white; font-family: 'Courier New', monospace; overflow: hidden; text-align: center; }
-        canvas { background: #000; display: block; margin: 0 auto; border-bottom: 5px solid #333; }
+        canvas { background: #000; display: block; margin: 0 auto; border-bottom: 3px solid #333; }
         .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.96); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 100; }
-        #settingsMenu, #shopMenu, #menu, #nameMenu, #leaderboard { display: none; }
+        #menu, #nameMenu, #shopMenu, #leaderboard, #gameOver { display: none; }
         h1 { font-size: 60px; color: #00ffcc; text-shadow: 0 0 15px #00ffcc; margin: 10px; }
         .studio-name { color: #ff00ff; font-size: 14px; letter-spacing: 3px; margin-bottom: 20px; }
         input { background: #111; border: 2px solid #ff00ff; color: white; padding: 12px; font-size: 18px; text-align: center; margin: 10px; outline: none; }
         button { background: transparent; color: #00ffcc; border: 2px solid #00ffcc; padding: 10px 25px; font-size: 16px; cursor: pointer; margin: 5px; border-radius: 4px; transition: 0.2s; }
         button:hover { background: #00ffcc; color: black; }
-        #ui { position: absolute; top: 15px; left: 15px; text-align: left; font-size: 16px; color: #00ffcc; pointer-events: none; z-index: 10; line-height: 1.4; }
-        .shop-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin: 15px; max-height: 300px; overflow-y: auto; padding: 10px; border: 1px solid #333; }
-        .skin-card { border: 1px solid #444; padding: 8px; cursor: pointer; background: #111; width: 80px; font-size: 10px; }
+        #ui { position: absolute; top: 15px; left: 15px; text-align: left; font-size: 16px; color: #00ffcc; pointer-events: none; z-index: 10; }
+        .shop-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin: 15px; max-height: 350px; overflow-y: auto; padding: 10px; border: 1px solid #333; width: 450px; }
+        .skin-card { border: 1px solid #444; padding: 8px; cursor: pointer; background: #111; font-size: 10px; }
         .selected { border-color: #00ffcc; background: #003333; }
-        #lb-list { width: 300px; margin: 20px; text-align: left; font-size: 18px; }
-        .lb-entry { display: flex; justify-content: space-between; border-bottom: 1px solid #222; padding: 5px; }
     </style>
 </head>
 <body>
@@ -28,7 +26,7 @@
         BEST: <span id="ui-best">0</span>
     </div>
 
-    <!-- AUDIO -->
+    <!-- AUDIO HANDLERS -->
     <script>
         const sfx = {
             music: new Audio('https://soundimage.org'),
@@ -60,9 +58,8 @@
     <!-- LEADERBOARD -->
     <div id="leaderboard" class="overlay">
         <h1>GLOBAL RANKS</h1>
-        <div id="lb-list"></div>
-        <!-- FIXED: THIS NOW GOES BACK TO MENU -->
-        <button onclick="toggleMenu('leaderboard', false)">BACK TO MENU</button>
+        <div id="lb-list" style="margin:20px; width:300px; text-align:left;"></div>
+        <button onclick="toggleMenu('menu', true)">BACK TO MENU</button>
     </div>
 
     <!-- SHOP -->
@@ -70,7 +67,7 @@
         <h1>THE VAULT</h1>
         <div id="shopCoinDisplay" style="color:#ffd700">Coins: 0</div>
         <div class="shop-grid" id="skinList"></div>
-        <button onclick="toggleMenu('shopMenu', false)">BACK TO MENU</button>
+        <button onclick="toggleMenu('menu', true)">BACK TO MENU</button>
     </div>
 
     <canvas id="game"></canvas>
@@ -84,57 +81,54 @@
         let player = { x: canvas.width/2, y: canvas.height - 100, size: 30 };
         let enemies = [], voidCoins = [];
 
-        // 50 SKINS
+        // Generate 50 Skins
         const skinColors = ['#00ffcc','#ff00ff','#ffd700','#ff4400','#22ff22','#ffffff','#9900ff','#0099ff','#ff1493','#7fff00'];
         const skins = [];
         for(let i=0; i<50; i++) skins.push({ id: i, name: 'Skin ' + (i+1), color: skinColors[i % 10], price: (i * 20), shape: i > 25 ? 'cir' : 'sq' });
 
-        async function hash(s) {
-            const utf8 = new TextEncoder().encode(s);
-            const hashBuffer = await crypto.subtle.digest('SHA-256', utf8);
-            return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
-        }
+        function handleAuth() {
+            const u = document.getElementById('userIn').value;
+            const p = document.getElementById('passIn').value;
 
-        async function handleAuth() {
-            const u = document.getElementById('userIn').value, p = document.getElementById('passIn').value, h = await hash(p);
-            // ADMIN: glitchboundstudio / glitchboundstudio
-            if (u === "glitchboundstudio" && h === "9918739958742d131f479e390c588e2c39e2463e23976839352e0964177b947c") {
+            // ADMIN FIX: Instant match for glitchboundstudio
+            if (u.toLowerCase() === "glitchboundstudio" && p.toLowerCase() === "glitchboundstudio") {
                 login({ name: "GlitchBoundStudio", coins: 999999, high: 9999, lvl: 99, owned: skins.map(s=>s.id), sel: 1, isAdmin: true });
                 return;
             }
+
+            if(!u || !p) { alert("Enter details!"); return; }
+
             let users = JSON.parse(localStorage.getItem('vj_users')) || {};
-            if (users[u] && users[u].pass === p) login(users[u]);
-            else if (!users[u]) {
+            if (users[u]) {
+                if (users[u].pass === p) login(users[u]);
+                else alert("WRONG PASSWORD.");
+            } else {
                 let newUser = { name: u, pass: p, coins: 0, high: 0, lvl: 1, owned:, sel: 0 };
-                users[u] = newUser; localStorage.setItem('vj_users', JSON.stringify(users)); login(newUser);
-            } else alert("WRONG PASS.");
+                users[u] = newUser;
+                localStorage.setItem('vj_users', JSON.stringify(users));
+                login(newUser);
+            }
         }
 
         function login(data) {
-            currentUser = data; document.getElementById('nameMenu').style.display = 'none';
+            currentUser = data;
+            document.getElementById('nameMenu').style.display = 'none';
             document.getElementById('menu').style.display = 'flex';
             document.getElementById('ui-id').innerText = currentUser.name.toUpperCase();
             updateUI();
         }
 
-        // FIXED: CLEAN OVERLAY HANDLING
-        function toggleMenu(id, show) {
+        function toggleMenu(id, isOverlay) {
             document.querySelectorAll('.overlay').forEach(el => el.style.display = 'none');
-            if (show) {
-                document.getElementById(id).style.display = 'flex';
-                if(id === 'shopMenu') renderShop();
-                if(id === 'leaderboard') renderLeaderboard();
-            } else {
-                document.getElementById('menu').style.display = 'flex';
-            }
+            document.getElementById(id).style.display = 'flex';
+            if(id === 'shopMenu') renderShop();
+            if(id === 'leaderboard') renderLB();
         }
 
-        function renderLeaderboard() {
+        function renderLB() {
             const list = document.getElementById('lb-list');
-            const data = [
-                {n: "GlitchBoundStudio", s: 9999}, {n: "Void_Master", s: 4500}, {n: "Shadow", s: 3200}, {n: currentUser.name, s: currentUser.high}
-            ].sort((a,b) => b.s - a.s);
-            list.innerHTML = data.map((e, i) => `<div class="lb-entry"><span>${i+1}. ${e.n}</span><span>${e.s}</span></div>`).join('');
+            const data = [{n:"GlitchBoundStudio", s:9999}, {n:"Void_King", s:5000}, {n:currentUser.name, s:currentUser.high}].sort((a,b)=>b.s-a.s);
+            list.innerHTML = data.map((e,i)=>`<div style="display:flex; justify-content:space-between; padding:5px; border-bottom:1px solid #333"><span>${i+1}. ${e.n}</span><span>${e.s}</span></div>`).join('');
         }
 
         function renderShop() {
@@ -148,7 +142,7 @@
             document.getElementById('shopCoinDisplay').innerText = "Coins: " + currentUser.coins;
         }
 
-        async function buySkin(id) {
+        function buySkin(id) {
             const s = skins[id];
             if(currentUser.owned.includes(id)) currentUser.sel = id;
             else if(currentUser.coins >= s.price) { currentUser.coins -= s.price; currentUser.owned.push(id); currentUser.sel = id; }
@@ -161,8 +155,7 @@
         window.addEventListener('mousemove', e => { if(gameActive) player.x = e.clientX; });
 
         function startGame() {
-            document.getElementById('menu').style.display = 'none';
-            document.getElementById('leaderboard').style.display = 'none';
+            document.querySelectorAll('.overlay').forEach(e=>e.style.display='none');
             score = 0; enemies = []; voidCoins = []; gameActive = true; frame = 0;
             sfx.music.play(); animate();
         }
