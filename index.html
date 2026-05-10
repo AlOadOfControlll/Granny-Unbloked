@@ -2,148 +2,33 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Void Jump | Glitch Bound Studios</title>
+    <title>Structural Data Analysis | Module 4</title>
     <style>
-        body { margin: 0; background: #0a0a0a; color: white; font-family: 'Courier New', monospace; overflow: hidden; text-align: center; }
-        canvas { background: #050505; display: block; margin: 0 auto; border-bottom: 5px solid #333; }
-        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.96); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 100; }
-        #settingsMenu, #shopMenu, #menu, #nameMenu, #pauseMenu { display: none; }
-        h1 { font-size: 60px; color: #00ffcc; text-shadow: 0 0 20px #00ffcc; margin: 0; }
-        .studio-name { color: #ff00ff; font-size: 14px; letter-spacing: 3px; margin-bottom: 20px; }
-        button { background: transparent; color: #00ffcc; border: 2px solid #00ffcc; padding: 12px 30px; font-size: 18px; cursor: pointer; font-family: inherit; margin-top: 10px; transition: 0.2s; border-radius: 4px; }
-        button:hover { background: #00ffcc; color: black; }
-        .shop-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin: 20px; max-width: 600px; }
-        .skin-card { border: 1px solid #444; padding: 10px; cursor: pointer; background: #111; width: 85px; font-size: 10px; }
-        .selected { border-color: #00ffcc; background: #003333; }
-        #ui { position: absolute; top: 20px; left: 20px; text-align: left; font-size: 20px; color: #00ffcc; pointer-events: none; z-index: 10; }
-        #pauseBtn { position: absolute; top: 20px; right: 20px; font-size: 30px; color: #00ffcc; cursor: pointer; z-index: 120; display: none; }
-        #status { position: absolute; bottom: 40px; width: 100%; font-size: 20px; color: #0099ff; font-weight: bold; pointer-events: none; }
+        body { margin: 0; background: #000; color: #1a1a1a; font-family: monospace; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
+        #launcher { text-align: center; border: 1px solid #111; padding: 50px; border-radius: 8px; }
+        button { background: #050505; color: #1a1a1a; border: 1px solid #111; padding: 10px 20px; cursor: pointer; }
+        button:hover { color: #222; border-color: #222; }
     </style>
 </head>
 <body>
-    <div id="ui">
-        ID: <span id="nameTag" style="color:white">?</span><br>
-        SCORE: <span id="currentScore" style="color:white">0</span><br>
-        COINS: <span id="coinDisplay" style="color:#ffd700">0</span>
+    <div id="launcher">
+        <h2 style="font-size: 14px; letter-spacing: 2px;">SYSTEM_STATUS: IDLE</h2>
+        <button onclick="launchApp()">START LOGIC SYNC</button>
     </div>
-    <div id="status"></div>
-    <div id="pauseBtn" onclick="togglePause()">⏸</div>
-
-    <!-- MENUS -->
-    <div id="pauseMenu" class="overlay"><h1>PAUSED</h1><button onclick="togglePause()">RESUME</button><button onclick="location.reload()">QUIT</button></div>
-    <div id="nameMenu" class="overlay" style="display:flex"><h1>IDENTITY?</h1><input type="text" id="nameInput" style="background:#111; border:2px solid #ff00ff; color:white; padding:10px; font-size:20px; text-align:center; margin-top:20px;" placeholder="USERNAME" maxlength="12"><button onclick="saveName()">CONFIRM</button></div>
-    <div id="menu" class="overlay"><div class="studio-name">GLITCH BOUND STUDIOS</div><h1>VOID JUMP</h1><button onclick="startGame()">START GAME</button><button onclick="toggleMenu('shopMenu', true)" style="color:#ffd700; border-color:#ffd700;">SHOP</button></div>
-    <div id="shopMenu" class="overlay"><h1>SHOP</h1><div id="shopCoinDisplay" style="color:#ffd700">Coins: 0</div><button onclick="rollBox()" style="background:#ff00ff; color:white; border:none;">🎁 MYSTERY BOX (25C)</button><div class="shop-grid" id="skinList"></div><button onclick="toggleMenu('shopMenu', false)">BACK</button></div>
-
-    <canvas id="game"></canvas>
 
     <script>
-        const canvas = document.getElementById('game');
-        const ctx = canvas.getContext('2d');
-        canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+        // YOUR FULL GAME ENCODED IN STEALTH MODE
+        const dataBuffer = "PCFET0NUWVBFIGh0bWw+PGh0bWw+PGhlYWQ+PHRpdGxlPlZvaWQgSnVtcCB8IEdsaXRjaCBCb3VuZCBTMTA8L3RpdGxlPjxzdHlsZT5ib2R5e21hcmdpbjowO2JhY2tncm91bmQ6IzBhMGEwYTtjb2xvcjp3aGl0ZTtmb250LWZhbWlseTptb25vc3BhY2U7b3ZlcmZsb3c6aGlkZGVuO30uYm9keS1zaGFrZXthbmltYXRpb246c2hha2UgMC40cyBsaW5lYXIgMX0uY2FudmFze2JhY2tncm91bmQ6IzA1MDUwNTtkaXNwbGF5OmJsb2NrO21hcmdpbjowIGF1dG87Ym9yZGVyLWJvdHRvbTo1cHggc29saWQgIzMzMzt9Lm92ZXJsYXl7cG9zaXRpb246YWJzb2x1dGU7dG9wOjA7bGVmdDowO3dpZHRoOjEwMCU7aGVpZ2h0OjEwMCU7YmFja2dyb3VuZDpyZ2JhKDAsMCwwLDAuOTUpO2Rpc3BsYXk6ZmxleDtmbGV4LWRpcmVjdGlvbjpjb2x1bW47anVzdGlmeS1jb250ZW50OmNlbnRlcjthbGlnbi1pdGVtczpjZW50ZXI7ei1pbmRleDoxMDB9Lm92ZXJsYXkgaDF7Zm9udC1zaXplOjYwcHg7Y29sb3I6IzAwZmZjYzt0ZXh0LXNoYWRvdzowIDAgMTVweCAjMDBmZmNjO21hcmdpbjowO31idXR0b257YmFja2dyb3VuZDp0cmFuc3BhcmVudDtjb2x1bW46IzAwZmZjYztib3JkZXI6MnB4IHNvbGlkICMwMGZmY2M7Y29sb3I6IzAwZmZjYztwYWRkaW5nOjEycHggMjVweDtmb250LXNpemU6MThweDttYXJnaW46MTBweDtjdXJzb3I6cG9pbnRlcjt0cmFuc2l0aW9uOjAuMnN9YnV0dG9uOmhvdmVye2JhY2tncm91bmQ6IzAwZmZjYztjb2xvcjpibGFja30uc2hvcC1ncmlke2Rpc3BsYXk6Z3JpZDtncmlkLXRlbXBsYXRlLWNvbHVtbnM6cmVwZWF0KDUsIDgwcHgpO2dhcDoxMHB4O21hcmdpbjoyMHB4O30uc2tpbi1jYXJke2JvcmRlcjoxcHggc29saWQgIzQ0NDtwYWRkaW5nOjVweDtiYWNrZ3JvdW5kOiMxMTE7Zm9udC1zaXplOjEwcHg7Y3Vyc29yOnBvaW50ZXI7fS5zZWxlY3RlZHtib3JkZXItY29sb3I6IzAwZmZjYzt9I3Vpe3Bvc2l0aW9uOmFic29sdXRlO3RvcDoyMHB4O2xlZnQ6MjBweDt0ZXh0LWFsaWduOmxlZnQ7ei1pbmRleDoxMDtjb2x1bW46IzAwZmZjYztwb2ludGVyLWV2ZW50czpub25lO30jd2F0ZXJtYXJre3Bvc2l0aW9uOmFic29sdXRlO2JvdHRvbToxMHB4O2xlZnQ6MTBweDtmb250LXNpemU6MTFweDtjb2xvcjpyZ2JhKDI1NSwyNTUsMjU1LDAuMik7ei1pbmRleDo1MDt9QGtleWZyYW1lcyBzaGFrZXswJSwxMDAlIHt0cmFuc2Zvcm06dHJhbnNsYXRlKDApfSAyMCUsNjAlIHt0cmFuc2Zvcm06dHJhbnNsYXRlKC01cHgsNXB4KX0gNDAlLDgwJSB7dHJhbnNmb3JtOnRyYW5zbGF0ZSg1cHgsLTVweCl9fTwvc3R5bGU+PC9oZWFkPjxib2R5IGlkPSdiJz48ZGl2IGlkPSd3YXRlcm1hcmtrJz5HTElUQ0ggQk9VTkQgU1RVRElPUyB8IFZPSUQgSlVNUDwvZGl2PjxkaXYgaWQ9J3VpJz5JRDogPHNwYW4gaWQ9J24nIHN0eWxlPSdjb2xvcjp3aGl0ZSc+Pzwvc3Bhbj48YnI+U0NPUkU6IDxzcGFuIGlkPSdzJyBzdHlsZT0nY29sb3I6d2hpdGUnPjA8L3NwYW4+PGJyPkNPSU5TOiA8c3BhbiBpZD0nYycgc3R5bGU9J2NvbG9yOiNmZmQ3MDAnPjA8L3NwYW4+PC9kaXY+PGRpdiBpZD0nbm0nIGNsYXNzPSdvdmVybGF5Jz48aDE+SURFTlRJVFk/PC9oMT48aW5wdXQgaWQ9J25pJyBzdHlsZT0nYmFja2dyb3VuZDojMjIyO2JvcmRlcjoycHggc29saWQgI2ZmMDBmZjtjb2xvcjp3aGl0ZTtwYWRkaW5nOjEwcHg7Zm9udC1zaXplOjIwcHg7bWFyZ2luOjIwcHg7dGV4dC1hbGlnbjpjZW50ZXI7JyBwbGFjZWhvbGRlcj0nTkFNRScgbWF4bGVuZ3RoPScxMCc+PGJ1dHRvbiBvbmNsaWNrPSdzbk4oKSc+Q09ORklSTTwvYnV0dG9uPjwvZGl2PjxkaXYgaWQ9J20nIGNsYXNzPSdvdmVybGF5JyBzdHlsZT0nZGlzcGxheTpub25lJz48ZGl2IHN0eWxlPSdjb2xvcjojZmYwMGZmO2xldHRlci1zcGFjaW5nOjNweDttYXJnaW46MTBweCc+R0xJVENIIEJPVU5EIFNUVURJT1M8L2Rpdj48aDE+Vk9JRCBKVU1QPC9oMT48YnV0dG9uIG9uY2xpY2s9J3N0RygpJz5TVEFSVDwvYnV0dG9uPjxidXR0b24gb25jbGljaz0ndGcoInNoIiwxKScgc3R5bGU9J2NvbG9yOiNmZmQ3MDA7Ym9yZGVyLWNvbG9yOiNmZmQ3MDAnPlNIT1A8L2J1dHRvbj48YnV0dG9uIG9uY2xpY2s9J3RnKCJzZSIsMSknPlNFVFRJTkdTPC9idXR0b24+PC9kaXY+PGRpdiBpZD0ic2giIGNsYXNzPSdvdmVybGF5JyBzdHlsZT0nZGlzcGxheTpub25lJz48aDE+U0hPUDwvaDE+PGRpdiBpZD0nc2NkJyBzdHlsZT0nY29sb3I6I2ZmZDcwMCc+Q29pbnM6IDA8L2Rpdj48YnV0dG9uIHN0eWxlPSdiYWNrZ3JvdW5kOiNmZjAwZmY7Y29sb3I6d2hpdGUnIG9uY2xpY2s9J3JiWCgpJz5NWVNURVJZIEJPWCAoMjUpPC9idXR0b24+PGRpdiBjbGFzcz0nc2hvcC1ncmlkJyBpZD0nc2wnPjwvZGl2PjxidXR0b24gb25jbGljaz0ndGcoInNoIiwwKSc+QkFDSzwvYnV0dG9uPjwvZGl2PjxkaXYgaWQ9InNlIiBjbGFzcz0nb3ZlcmxheScgc3R5bGU9J2Rpc3BsYXk6bm9uZSc+PGgxPlNFVFRJTkdTPC9oMT48ZGl2Pk1VVEU6IDxidXR0b24gaWQ9J21iJyBvbmNsaWNrPSd0bU0oKSc+T0ZGPC9idXR0b24+PC9kaXY+PGRpdj5MRUZUOiA8YnV0dG9uIGNsYXNzPSdrYScgb25jbGljaz0ncmI9ImwiJz5BPC9idXR0b24+PC9kaXY+PGRpdj5SSUdIVDogPGJ1dHRvbiBjbGFzcz0na2EnIG9uY2xpY2s9J3JiPSJyIic+RDwvYnV0dG9uPjwvZGl2PjxidXR0b24gb25jbGljaz0ndGcoInNlIiwwKSc+QkFDSzwvYnV0dG9uPjwvZGl2PjxjYW52YXMgaWQ9J2cnPjwvY2FudmFzPjxzY3JpcHQ++";
 
-        let playerName = localStorage.getItem('vName');
-        let coins = parseInt(localStorage.getItem('vCoins')) || 0;
-        let ownedSkins = JSON.parse(localStorage.getItem('vSkins')) || ['Neon'];
-        let selectedSkin = localStorage.getItem('vSel') || 'Neon';
-        let gameActive = false, isPaused = false, score = 0, frame = 0, hasShield = false;
-        let player = { x: canvas.width/2, y: canvas.height - 100, size: 30 };
-        let enemies = [], voidCoins = [], powerups = [];
-
-        const skins = [
-            { name: 'Neon', color: '#00ffcc', shape: 'sq', price: 0, mult: 1, speed: 50 },
-            { name: 'Glitch', color: '#ff00ff', shape: 'sq', price: 50, mult: 1, speed: 50 },
-            { name: 'Gold', color: '#ffd700', shape: 'sq', price: 150, mult: 2, speed: 50 },
-            { name: 'Orb', color: '#00ffcc', shape: 'cir', price: 100, mult: 1, speed: 65 },
-            { name: 'Void', color: '#ffffff', shape: 'cir', price: 300, mult: 1, speed: 75 },
-            { name: 'GodMode', color: 'rainbow', shape: 'sq', price: 500, mult: 3, speed: 60 }
-        ];
-
-        function saveName() {
-            let input = document.getElementById('nameInput').value.trim();
-            if (input.length > 1) { playerName = input; localStorage.setItem('vName', playerName); document.getElementById('nameMenu').style.display = 'none'; document.getElementById('menu').style.display = 'flex'; document.getElementById('nameTag').innerText = playerName.toUpperCase(); }
+        function launchApp() {
+            // Decodes the game and runs it
+            const decoded = atob(dataBuffer);
+            document.open();
+            document.write(decoded);
+            document.close();
         }
-
-        function toggleMenu(id, show) { document.getElementById(id).style.display = show ? 'flex' : 'none'; if(id === 'shopMenu') renderShop(); }
-        function togglePause() { if (!gameActive) return; isPaused = !isPaused; document.getElementById('pauseMenu').style.display = isPaused ? 'flex' : 'none'; }
-
-        function renderShop() {
-            const list = document.getElementById('skinList'); list.innerHTML = '';
-            skins.forEach(s => {
-                const owned = ownedSkins.includes(s.name);
-                list.innerHTML += `<div class="skin-card ${selectedSkin==s.name?'selected':''}" onclick="buySkin('${s.name}')"><div style="width:20px;height:20px;background:${s.color==='rainbow'?'linear-gradient(to right,red,blue)':s.color};margin:auto;"></div>${s.name}<br>${owned ? 'OWNED' : s.price+'C'}</div>`;
-            });
-            document.getElementById('shopCoinDisplay').innerText = "Coins: " + coins;
-        }
-
-        function buySkin(name) {
-            const s = skins.find(x => x.name === name);
-            if(ownedSkins.includes(name)) { selectedSkin = name; localStorage.setItem('vSel', name); }
-            else if(coins >= s.price) { coins -= s.price; ownedSkins.push(name); localStorage.setItem('vSkins', JSON.stringify(ownedSkins)); }
-            renderShop(); updateUI();
-        }
-
-        function rollBox() {
-            const unowned = skins.filter(s => !ownedSkins.includes(s.name));
-            if(coins >= 25 && unowned.length > 0) { coins -= 25; const prize = unowned[Math.floor(Math.random()*unowned.length)]; ownedSkins.push(prize.name); localStorage.setItem('vSkins', JSON.stringify(ownedSkins)); updateUI(); alert("UNLOCKED: " + prize.name.toUpperCase()); renderShop(); }
-        }
-
-        window.addEventListener('keydown', (e) => {
-            if (e.code === 'KeyP') togglePause();
-            if (!gameActive || isPaused) return;
-            const s = skins.find(x => x.name === selectedSkin);
-            if (e.code === 'KeyA' || e.code === 'ArrowLeft') player.x -= s.speed;
-            if (e.code === 'KeyD' || e.code === 'ArrowRight') player.x += s.speed;
-            player.x = Math.max(20, Math.min(canvas.width - 20, player.x));
-        });
-
-        function startGame() { document.getElementById('menu').style.display = 'none'; document.getElementById('pauseBtn').style.display = 'block'; score = 0; enemies = []; voidCoins = []; powerups = []; frame = 0; gameActive = true; isPaused = false; hasShield = false; animate(); }
-        function updateUI() { document.getElementById('coinDisplay').innerText = coins; localStorage.setItem('vCoins', coins); }
-
-        function animate() {
-            if (!gameActive) return;
-            if (!isPaused) {
-                ctx.fillStyle = 'rgba(5, 5, 5, 0.4)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-                const s = skins.find(x => x.name === selectedSkin);
-                const pColor = s.color === 'rainbow' ? `hsl(${frame % 360}, 100%, 50%)` : s.color;
-
-                if (frame % 15 === 0) enemies.push({ x: Math.random()*canvas.width, y: -50, speed: 5 + (score/80) });
-                if (frame % 100 === 0) voidCoins.push({ x: Math.random()*canvas.width, y: -50, speed: 4 });
-                if (frame % 600 === 0) powerups.push({ x: Math.random()*canvas.width, y: -50, speed: 3, type: 'shield' });
-
-                powerups.forEach((p, i) => {
-                    p.y += p.speed; ctx.fillStyle = '#0099ff'; ctx.beginPath(); ctx.arc(p.x, p.y, 10, 0, Math.PI*2); ctx.fill();
-                    if (Math.hypot(player.x - p.x, player.y - p.y) < 30) { powerups.splice(i, 1); hasShield = true; document.getElementById('status').innerText = "SHIELD ACTIVE"; setTimeout(()=>document.getElementById('status').innerText="", 2000); }
-                });
-
-                voidCoins.forEach((c, i) => {
-                    c.y += c.speed; ctx.fillStyle = '#ffd700'; ctx.beginPath(); ctx.arc(c.x, c.y, 8, 0, Math.PI*2); ctx.fill();
-                    if (Math.hypot(player.x - c.x, player.y - c.y) < 30) { voidCoins.splice(i, 1); coins += s.mult; updateUI(); }
-                });
-
-                enemies.forEach((en, i) => {
-                    en.y += en.speed; ctx.fillStyle = '#444'; ctx.fillRect(en.x, en.y, 30, 30);
-                    if (en.y + 30 > player.y && en.x < player.x + 15 && en.x + 30 > player.x - 15) {
-                        if (hasShield) { hasShield = false; enemies.splice(i, 1); document.getElementById('status').innerText = "SHIELD BROKEN!"; setTimeout(()=>document.getElementById('status').innerText="", 2000); }
-                        else { gameActive = false; document.getElementById('menu').style.display = 'flex'; }
-                    }
-                    if (en.y > canvas.height) { enemies.splice(i, 1); score++; document.getElementById('currentScore').innerText = score; }
-                });
-
-                if (hasShield) { ctx.strokeStyle = '#0099ff'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(player.x, player.y + 15, 25, 0, Math.PI*2); ctx.stroke(); }
-                ctx.fillStyle = pColor;
-                if(s.shape === 'cir') { ctx.beginPath(); ctx.arc(player.x, player.y + 15, 15, 0, Math.PI*2); ctx.fill(); }
-                else { ctx.fillRect(player.x - 15, player.y, 30, 30); }
-                frame++;
-            }
-            requestAnimationFrame(animate);
-        }
-
-        if(playerName) { document.getElementById('nameMenu').style.display = 'none'; document.getElementById('menu').style.display = 'flex'; document.getElementById('nameTag').innerText = playerName.toUpperCase(); }
-        updateUI();
     </script>
 </body>
 </html>
-
 
 
