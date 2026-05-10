@@ -4,68 +4,43 @@
     <meta charset="UTF-8">
     <title>Void Jump | Glitch Bound Studios</title>
     <style>
-        body { margin: 0; background: #050505; color: white; font-family: 'Courier New', monospace; overflow: hidden; text-align: center; }
-        canvas { background: #000; display: block; margin: 0 auto; border-bottom: 3px solid #333; transition: background 0.3s; }
-        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.98); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 100; }
-        #menu, #nameMenu, #shopMenu, #leaderboard { display: none; }
-        h1 { font-size: 60px; color: #00ffcc; text-shadow: 0 0 20px #00ffcc; margin: 10px; }
-        .studio-name { color: #ff00ff; font-size: 14px; letter-spacing: 3px; margin-bottom: 20px; }
-        input { background: #111; border: 2px solid #ff00ff; color: white; padding: 12px; font-size: 18px; text-align: center; margin: 10px; outline: none; }
-        button { background: transparent; color: #00ffcc; border: 2px solid #00ffcc; padding: 10px 25px; font-size: 16px; cursor: pointer; margin: 5px; border-radius: 4px; transition: 0.2s; }
+        body { margin: 0; background: #050505; color: white; font-family: monospace; overflow: hidden; text-align: center; }
+        canvas { background: #000; display: block; margin: 0 auto; border-bottom: 3px solid #333; }
+        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.96); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 100; }
+        h1 { font-size: 60px; color: #00ffcc; text-shadow: 0 0 10px #00ffcc; margin: 10px; }
+        .studio-text { color: #ff00ff; letter-spacing: 3px; font-size: 14px; margin-bottom: 20px; }
+        input { background: #111; border: 2px solid #ff00ff; color: white; padding: 15px; font-size: 20px; margin: 10px; text-align: center; outline: none; width: 250px; }
+        button { background: transparent; color: #00ffcc; border: 2px solid #00ffcc; padding: 12px 30px; font-size: 18px; cursor: pointer; margin: 10px; transition: 0.2s; border-radius: 5px; }
         button:hover { background: #00ffcc; color: black; }
-        #ui { position: absolute; top: 15px; left: 15px; text-align: left; font-size: 16px; color: #00ffcc; pointer-events: none; z-index: 10; line-height: 1.4; }
-        .shop-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin: 15px; max-height: 300px; overflow-y: auto; padding: 10px; border: 1px solid #333; width: 450px; }
-        .skin-card { border: 1px solid #444; padding: 8px; cursor: pointer; background: #111; width: 80px; font-size: 10px; }
-        .selected { border-color: #00ffcc; background: #003333; }
-        #watermark { position: absolute; bottom: 15px; right: 20px; font-size: 14px; color: #ff00ff; z-index: 200; font-weight: bold; text-shadow: 0 0 5px #ff00ff; pointer-events: none; }
-        #troll-msg { position: absolute; top: 40%; width: 100%; color: red; font-size: 40px; font-weight: bold; display: none; z-index: 200; }
+        #ui { position: absolute; top: 15px; left: 15px; text-align: left; font-size: 16px; color: #00ffcc; pointer-events: none; z-index: 10; }
+        .shop-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin: 15px; max-height: 300px; overflow-y: auto; padding: 10px; width: 450px; border: 1px solid #333; }
+        .skin-card { border: 1px solid #444; padding: 8px; cursor: pointer; background: #111; font-size: 10px; }
+        #watermark { position: absolute; bottom: 15px; right: 20px; font-size: 14px; color: #ff00ff; z-index: 200; font-weight: bold; text-shadow: 0 0 5px #ff00ff; }
     </style>
 </head>
 <body>
-    <div id="troll-msg">CHEATER DETECTED: TERMINATING...</div>
     <div id="watermark">GLITCHBOUNDSTUDIOS</div>
     
     <div id="ui">
-        ID: <span id="ui-id">?</span> | LVL: <span id="ui-lvl">1</span><br>
-        COINS: <span id="ui-coins" style="color:#ffd700">0</span><br>
-        BEST: <span id="ui-best">0</span>
-    </div>
-
-    <!-- AUDIO -->
-    <script>
-        const sfx = {
-            music: new Audio('https://soundimage.org'),
-            coin: new Audio('https://readthedocs.io'),
-            death: new Audio('https://patrickdearteaga.com')
-        };
-        sfx.music.loop = true; sfx.music.volume = 0.4;
-    </script>
-
-    <!-- SIGN IN PAGE -->
-    <div id="nameMenu" class="overlay" style="display:flex">
-        <div class="studio-name">GLITCH BOUND SECURE LOGIN</div>
-        <h1>IDENTITY?</h1>
-        <p style="font-size:12px; color:#888;">Enter handle and keycode to sync.</p>
-        <input type="text" id="userIn" placeholder="USERNAME">
-        <input type="password" id="passIn" placeholder="PASSWORD">
-        <button onclick="handleAuth()">SYNC VOID</button>
+        ID: <span id="ui-id">?</span> | BEST: <span id="ui-best">0</span><br>
+        COINS: <span id="ui-coins" style="color:#ffd700">0</span>
     </div>
 
     <!-- MAIN MENU -->
-    <div id="menu" class="overlay">
-        <div class="studio-name">GLITCH BOUND STUDIOS</div>
+    <div id="menu" class="overlay" style="display:flex">
+        <div class="studio-text">GLITCH BOUND STUDIOS</div>
         <h1>VOID JUMP</h1>
-        <button onclick="startGame()">START RUN</button>
-        <button onclick="toggleMenu('shopMenu', true)" style="color:#ffd700; border-color:#ffd700;">SHOP (50 SKINS)</button>
-        <button onclick="location.reload()">LOGOUT</button>
+        <input type="text" id="nameIn" placeholder="ENTER HANDLE" maxlength="12">
+        <button onclick="start()">START RUN</button>
+        <button onclick="toggleShop(true)" style="color:#ffd700; border-color:#ffd700;">THE VAULT</button>
     </div>
 
     <!-- SHOP -->
-    <div id="shopMenu" class="overlay">
+    <div id="shopMenu" class="overlay" style="display:none">
         <h1>THE VAULT</h1>
-        <div id="shopCoinDisplay" style="color:#ffd700">Coins: 0</div>
+        <div id="vCoins" style="color:#ffd700; margin-bottom:10px;">Coins: 0</div>
         <div class="shop-grid" id="skinList"></div>
-        <button onclick="toggleMenu('shopMenu', false)">BACK TO MENU</button>
+        <button onclick="toggleShop(false)">BACK</button>
     </div>
 
     <canvas id="game"></canvas>
@@ -75,138 +50,93 @@
         const ctx = canvas.getContext('2d');
         canvas.width = window.innerWidth; canvas.height = window.innerHeight;
 
-        let user = null, active = false, isTrollMode = false, score = 0, frame = 0, shake = 0;
-        let player = { x: canvas.width/2, y: canvas.height - 120 };
-        let enemies = [], vCoins = [], particles = [];
+        let active = false, score = 0, frame = 0, particles = [], shake = 0;
+        let coins = parseInt(localStorage.getItem('gb_c')) || 0;
+        let high = parseInt(localStorage.getItem('gb_h')) || 0;
+        let owned = JSON.parse(localStorage.getItem('gb_s')) || [0];
+        let sel = parseInt(localStorage.getItem('gb_sel')) || 0;
 
-        const skinColors = ['#00ffcc','#ff00ff','#ffd700','#ff4400','#22ff22','#ffffff','#9900ff','#0099ff','#ff1493','#7fff00'];
-        const skins = [];
-        for(let i=0; i<50; i++) skins.push({ id: i, name: 'Skin '+(i+1), color: skinColors[i % 10], price: (i * 20), shape: i > 25 ? 'cir' : 'sq' });
+        let skins = [];
+        for(let i=0; i<50; i++) skins.push({id: i, color: `hsl(${i*45}, 70%, 50%)`, price: i*25});
 
-        async function hash(s) {
-            const utf8 = new TextEncoder().encode(s);
-            const hashBuffer = await crypto.subtle.digest('SHA-256', utf8);
-            return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
-        }
-
-        async function handleAuth() {
-            const u = document.getElementById('userIn').value.trim();
-            const p = document.getElementById('passIn').value.trim();
-            const h = await hash(p);
-
-            // ADMIN ACCOUNT: GlitchBoundStudio / GlitchBound_Master_77
-            if (u === "GlitchBoundStudio" && h === "9918739958742d131f479e390c588e2c39e2463e23976839352e0964177b947c") {
-                user = { name: "Admin", coins: 999999, high: 9999, lvl: 99, owned: skins.map(s=>s.id), sel: 1, isAdmin: true };
-                login(); return;
-            }
-
-            let db = JSON.parse(localStorage.getItem('gb_final_db')) || {};
-            if (db[u]) {
-                if (db[u].pass === p) {
-                    const sig = await hash(db[u].coins.toString());
-                    if (db[u].sig !== sig) triggerTroll(); else { user = db[u]; login(); }
-                } else alert("KEY DENIED.");
-            } else {
-                user = { name: u, pass: p, coins: 0, high: 0, lvl: 1, owned:, sel: 0, sig: await hash("0") };
-                db[u] = user; localStorage.setItem('gb_final_db', JSON.stringify(db)); login();
-            }
-        }
-
-        function login() {
-            document.getElementById('nameMenu').style.display = 'none';
-            document.getElementById('menu').style.display = 'flex';
-            document.getElementById('ui-id').innerText = user.name.toUpperCase();
-            updateUI();
-        }
-
-        function triggerTroll() {
-            isTrollMode = true; document.getElementById('nameMenu').style.display = 'none';
-            document.getElementById('troll-msg').style.display = 'block';
-            canvas.style.background = "darkred"; startGame();
-        }
-
-        function toggleMenu(id, show) {
-            document.getElementById('menu').style.display = show ? 'none' : 'flex';
-            document.getElementById(id).style.display = show ? 'flex' : 'none';
-            if(id === 'shopMenu') renderShop();
-        }
-
-        function renderShop() {
-            const list = document.getElementById('skinList'); list.innerHTML = '';
-            skins.forEach(s => {
-                const owned = user.owned.includes(s.id);
-                list.innerHTML += `<div class="skin-card ${user.sel==s.id?'selected':''}" onclick="buySkin(${s.id})">
-                    <div style="width:20px;height:20px;background:${s.color};margin:auto;border-radius:${s.shape=='cir'?'50%':'0'}"></div>
-                    ${owned ? 'EQUIP' : s.price+'C'}</div>`;
-            });
-            document.getElementById('shopCoinDisplay').innerText = "Coins: " + user.coins;
-        }
-
-        async function buySkin(id) {
-            const s = skins[id];
-            if(user.owned.includes(id)) user.sel = id;
-            else if(user.coins >= s.price) { user.coins -= s.price; user.owned.push(id); user.sel = id; }
-            await save(); renderShop(); updateUI();
-        }
-
-        async function save() {
-            if(user.isAdmin) return;
-            user.sig = await hash(user.coins.toString());
-            let db = JSON.parse(localStorage.getItem('gb_final_db'));
-            db[user.name] = user; localStorage.setItem('gb_final_db', JSON.stringify(db));
-        }
-
-        function updateUI() { document.getElementById('ui-coins').innerText = user.coins; document.getElementById('ui-best').innerText = user.high; }
-
-        function startGame() {
+        function start() {
+            const n = document.getElementById('nameIn').value || "PLAYER";
+            if(n === "GlitchBoundStudio") { coins = 999999; owned = skins.map(s=>s.id); }
+            document.getElementById('ui-id').innerText = n.toUpperCase();
             document.getElementById('menu').style.display = 'none';
-            score = 0; enemies = []; vCoins = []; particles = []; active = true; frame = 0;
-            sfx.music.play(); loop();
+            active = true; score = 0; frame = 0; obstacles = []; vCoins = []; particles = [];
+            document.getElementById('ui-best').innerText = high;
+            updateUI(); loop();
         }
 
-        window.addEventListener('mousemove', e => { if(active) player.x = e.clientX; });
+        function toggleShop(val) {
+            document.getElementById('menu').style.display = val ? 'none' : 'flex';
+            document.getElementById('shopMenu').style.display = val ? 'flex' : 'none';
+            if(val) {
+                const list = document.getElementById('skinList'); list.innerHTML = '';
+                skins.forEach(s => {
+                    const isOwned = owned.includes(s.id);
+                    list.innerHTML += `<div class="skin-card" onclick="buy(${s.id})" style="border-color:${sel==s.id?'#00ffcc':'#444'}">
+                        <div style="width:20px;height:20px;background:${s.color};margin:auto;"></div>
+                        ${isOwned ? 'EQUIP' : s.price+'C'}</div>`;
+                });
+                document.getElementById('vCoins').innerText = "Coins: " + coins;
+            }
+        }
+
+        function buy(id) {
+            if(owned.includes(id)) { sel = id; }
+            else if(coins >= skins[id].price) { coins -= skins[id].price; owned.push(id); sel = id; }
+            save(); toggleShop(true); updateUI();
+        }
+
+        function save() { localStorage.setItem('gb_c', coins); localStorage.setItem('gb_h', high); localStorage.setItem('gb_s', JSON.stringify(owned)); localStorage.setItem('gb_sel', sel); }
+        function updateUI() { document.getElementById('ui-coins').innerText = coins; }
+
+        let player = { x: canvas.width/2, y: canvas.height - 120 };
+        let obstacles = [], vCoins = [];
+
+        window.addEventListener('mousemove', e => player.x = e.clientX);
 
         function loop() {
             if(!active) return;
-            if(shake > 0) { ctx.save(); ctx.translate(Math.random()*12-6, Math.random()*12-6); shake--; }
-            ctx.fillStyle = isTrollMode ? "rgba(50,0,0,0.3)" : "rgba(0,0,0,0.3)";
-            ctx.fillRect(0,0,canvas.width,canvas.height);
+            if(shake > 0) { ctx.save(); ctx.translate(Math.random()*10-5, Math.random()*10-5); shake--; }
+            ctx.fillStyle = "rgba(0,0,0,0.3)"; ctx.fillRect(0,0,canvas.width,canvas.height);
 
-            const s = skins[user.sel];
-            if (frame % 15 === 0) enemies.push({ x: Math.random()*canvas.width, y: -50, speed: isTrollMode ? 18 : 5+(score/100) });
-            if (frame % 80 === 0 && !isTrollMode) vCoins.push({ x: Math.random()*canvas.width, y: -50, speed: 4 });
+            if(frame % 20 === 0) obstacles.push({x: Math.random()*canvas.width, y: -50, s: 6+(score/12)});
+            if(frame % 80 === 0) vCoins.push({x: Math.random()*canvas.width, y: -50});
 
-            particles.push({x: player.x, y: player.y+15, l: 1.0, c: s.color});
-            particles.forEach((p, i) => { p.l -= 0.05; ctx.globalAlpha = p.l; ctx.fillStyle = p.c; ctx.fillRect(p.x-2, p.y, 4, 4); if(p.l <= 0) particles.splice(i,1); });
+            particles.push({x: player.x, y: player.y+15, l: 1.0});
+            particles.forEach((p, i) => { p.l -= 0.05; ctx.globalAlpha = p.l; ctx.fillStyle = skins[sel].color; ctx.fillRect(p.x-2, p.y, 4, 4); if(p.l <= 0) particles.splice(i,1); });
             ctx.globalAlpha = 1;
 
             vCoins.forEach((c, i) => {
-                c.y += c.speed; ctx.fillStyle = 'gold'; ctx.beginPath(); ctx.arc(c.x, c.y, 8, 0, Math.PI*2); ctx.fill();
-                if (Math.hypot(player.x - c.x, player.y - c.y) < 30) { vCoins.splice(i, 1); user.coins += 2; sfx.coin.play(); updateUI(); save(); }
+                c.y += 4; ctx.fillStyle = "gold"; ctx.beginPath(); ctx.arc(c.x, c.y, 8, 0, Math.PI*2); ctx.fill();
+                if(Math.hypot(player.x-c.x, player.y-c.y) < 30) { vCoins.splice(i, 1); coins += 2; updateUI(); save(); }
             });
 
-            enemies.forEach((en, i) => {
-                en.y += en.speed; ctx.fillStyle = isTrollMode ? "red" : "white"; ctx.fillRect(en.x, en.y, 30, 30);
-                if (en.y + 30 > player.y && Math.abs(en.x - player.x) < 25) {
-                    active = false; sfx.music.pause(); sfx.death.play(); shake = 25;
-                    if(!isTrollMode && score > user.high) { user.high = score; user.lvl = Math.floor(score/50)+1; save(); }
+            obstacles.forEach((o, i) => {
+                o.y += o.s; ctx.fillStyle = "white"; ctx.fillRect(o.x-15, o.y, 30, 30);
+                if(o.y > player.y-15 && Math.abs(o.x - player.x) < 25) {
+                    active = false; shake = 20;
+                    if(score > high) { high = score; save(); }
                     setTimeout(() => {
                         if(confirm("REVIVE FOR 50 COINS?")) {
-                            if(user.coins >= 50) { user.coins -= 50; active = true; loop(); sfx.music.play(); save(); updateUI(); }
-                            else { alert("NO COINS"); document.getElementById('menu').style.display = 'flex'; }
+                            if(coins >= 50) { coins -= 50; active = true; loop(); updateUI(); save(); }
+                            else { document.getElementById('menu').style.display = 'flex'; }
                         } else { document.getElementById('menu').style.display = 'flex'; }
-                    }, 1000);
+                    }, 500);
                 }
-                if (en.y > canvas.height) { enemies.splice(i, 1); score++; }
+                if(o.y > canvas.height) { obstacles.splice(i, 1); score++; }
             });
 
-            ctx.fillStyle = s.color;
-            if(s.shape === 'cir') { ctx.beginPath(); ctx.arc(player.x, player.y + 15, 15, 0, Math.PI*2); ctx.fill(); }
-            else { ctx.fillRect(player.x-15, player.y, 30, 30); }
+            ctx.fillStyle = skins[sel].color;
+            ctx.fillRect(player.x-15, player.y, 30, 30);
             if(shake > 0) ctx.restore();
             frame++; requestAnimationFrame(loop);
         }
     </script>
 </body>
 </html>
+
 
